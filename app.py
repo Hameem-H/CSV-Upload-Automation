@@ -1,665 +1,434 @@
 
-from pathlib import Path
 from datetime import datetime
-import csv
-import io
-import re
+from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
+from config.departments import (
+    get_department,
+    get_department_names,
+)
 
-# ============================================================
-# APPLICATION SETTINGS
-# ============================================================
-
-APP_TITLE = "Barcode TXT to CSV Converter"
-
-DEPARTMENTS = [
-    "Stickering",
-    "Conv Start",
-    "Conv End",
-    "Final Packing",
-    "Store FGS",
-]
-
-# Fixed output location.
-# Change this path if you want to save somewhere else.
-DEFAULT_OUTPUT = Path(r"F:\Barcode\CONE LINE 1(Conveyer Start)\2026\2026-09")
+from core.parser import parse_scanner_txt
+from core.duplicate_processor import build_outputs
+from core.report_generator import generate_processing_summary
+from storage.file_manager import save_outputs
 
 
-# ============================================================
+# --------------------------------------------------
 # PAGE CONFIGURATION
-# ============================================================
+# --------------------------------------------------
 
 st.set_page_config(
-    page_title=APP_TITLE,
+    page_title="Barcode Automation",
     page_icon="📦",
     layout="wide"
 )
 
 
-# ============================================================
-# TXT FILE PARSING
-# ============================================================
+# --------------------------------------------------
+# PAGE HEADER
+# --------------------------------------------------
 
-def parse_scanner_txt(file_bytes):
+st.title("Barcode Automation Dashboard")
 
-    """
-    Expected TXT format:
+st.caption(
+    "Scanner TXT processing, duplicate removal and ERP CSV preparation"
+)
 
-    DD/MM/YYYY,HH:MM:SS,ScannerID,BarcodeNumber
-
-    Example:
-    07/03/2020,11:00:44,03,93210140068
-    """
-
-    try:
-        text = file_bytes.decode("utf-8-sig")
-
-    except UnicodeDecodeError:
-        text = file_bytes.decode("cp1252")
-
-    valid_records = []
-    invalid_records = []
-
-    lines = text.splitlines()
-
-    for line_number, raw_line in enumerate(lines, start=1):
-
-        line = raw_line.strip()
-
-        # Ignore completely blank lines.
-        if not line:
-            continue
-
-        fields = [field.strip() for field in line.split(",")]
-
-        # Exactly four fields are required.
-        if len(fields) != 4:
-
-            invalid_records.append({
-                "LineNumber": line_number,
-                "RawLine": raw_line,
-                "Reason": "Expected exactly 4 fields"
-            })
-
-            continue
-
-        scan_date, scan_time, scanner_id, barcode = fields
-
-        # Required fields cannot be empty.
-        if not all(fields):
-
-            invalid_records.append({
-                "LineNumber": line_number,
-                "RawLine": raw_line,
-                "Reason": "One or more fields are empty"
-            })
-
-            continue
-
-        # Validate date.
-        try:
-            datetime.strptime(scan_date, "%d/%m/%Y")
-
-        except ValueError:
-
-            invalid_records.append({
-                "LineNumber": line_number,
-                "RawLine": raw_line,
-                "Reason": "Invalid date format"
-            })
-
-            continue
-
-        # Validate time.
-        try:
-            datetime.strptime(scan_time, "%H:%M:%S")
-
-        except ValueError:
-
-            invalid_records.append({
-                "LineNumber": line_number,
-                "RawLine": raw_line,
-                "Reason": "Invalid time format"
-            })
-
-            continue
-
-        # Keep ScannerID and BarcodeNumber as text.
-        valid_records.append({
-            "Date": scan_date,
-            "Time": scan_time,
-            "ScannerID": scanner_id,
-            "BarcodeNumber": barcode,
-            "_LineNumber": line_number
-        })
-
-    columns = [
-        "Date",
-        "Time",
-        "ScannerID",
-        "BarcodeNumber",
-        "_LineNumber"
-    ]
-
-    valid_df = pd.DataFrame(valid_records, columns=columns)
-
-    invalid_df = pd.DataFrame(
-        invalid_records,
-        columns=["LineNumber", "RawLine", "Reason"]
-    )
-
-    return valid_df, invalid_df
+st.divider()
 
 
-# ============================================================
-# DUPLICATE BARCODE PROCESSING
-# ============================================================
+# --------------------------------------------------
+# SESSION STATE
+# --------------------------------------------------
 
-def build_outputs(df):
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
 
-    """
-    Deduplication rule:
 
-    BarcodeNumber is the only field used to identify duplicates.
+# --------------------------------------------------
+# DEPARTMENT CONFIGURATION
+# --------------------------------------------------
 
-    The first occurrence is kept.
-    All later occurrences of the same barcode are removed,
-    regardless of date, time or scanner ID.
-    """
+department_options = get_department_names()
 
-    total_rows = len(df)
+if not department_options:
+    st.error("No departments are currently enabled.")
+    st.stop()
 
-    if df.empty:
 
-        unique_df = pd.DataFrame(
-            columns=["Date", "Time", "ScannerID", "BarcodeNumber"]
-        )
+# --------------------------------------------------
+# INPUT SECTION
+# --------------------------------------------------
 
-        duplicate_rows_df = pd.DataFrame(
-            columns=[
-                "Date",
-                "Time",
-                "ScannerID",
-                "BarcodeNumber",
-                "LineNumber"
-            ]
-        )
+st.subheader("1. Upload Scanner File")
 
-        duplicate_summary_df = pd.DataFrame(
-            columns=[
-                "BarcodeNumber",
-                "TotalOccurrences",
-                "FirstScanDate",
-                "FirstScanTime",
-                "FirstScannerID",
-                "DuplicateOccurrences"
-            ]
-        )
+with st.form("barcode_processing_form"):
 
-        return (
-            unique_df,
-            duplicate_rows_df,
-            duplicate_summary_df,
-            total_rows,
-            0,
-            0
-        )
-
-    # Find duplicate scans after the first occurrence.
-    duplicate_mask = df.duplicated(
-        subset=["BarcodeNumber"],
-        keep="first"
-    )
-
-    duplicate_rows = df[duplicate_mask].copy()
-
-    # Keep only the first occurrence of each barcode.
-    unique_df = df.drop_duplicates(
-        subset=["BarcodeNumber"],
-        keep="first"
-    ).copy()
-
-    # Prepare duplicate detail report.
-    duplicate_rows_df = duplicate_rows[
-        ["Date", "Time", "ScannerID", "BarcodeNumber", "_LineNumber"]
-    ].copy()
-
-    duplicate_rows_df.rename(
-        columns={"_LineNumber": "LineNumber"},
-        inplace=True
-    )
-
-    # Prepare duplicate summary report.
-    duplicate_summary = []
-
-    for barcode, group in df.groupby(
-        "BarcodeNumber",
-        sort=False
-    ):
-
-        if len(group) > 1:
-
-            first_scan = group.iloc[0]
-
-            duplicate_summary.append({
-                "BarcodeNumber": barcode,
-                "TotalOccurrences": len(group),
-                "FirstScanDate": first_scan["Date"],
-                "FirstScanTime": first_scan["Time"],
-                "FirstScannerID": first_scan["ScannerID"],
-                "DuplicateOccurrences": len(group) - 1
-            })
-
-    duplicate_summary_df = pd.DataFrame(
-        duplicate_summary,
-        columns=[
-            "BarcodeNumber",
-            "TotalOccurrences",
-            "FirstScanDate",
-            "FirstScanTime",
-            "FirstScannerID",
-            "DuplicateOccurrences"
+    selected_department = st.selectbox(
+        "Select Department",
+        options=list(department_options.keys()),
+        format_func=lambda department_id: department_options[
+            department_id
         ]
     )
 
-    unique_df = unique_df[
-        ["Date", "Time", "ScannerID", "BarcodeNumber"]
-    ].copy()
-
-    unique_count = len(unique_df)
-    duplicate_count = len(duplicate_rows_df)
-
-    return (
-        unique_df,
-        duplicate_rows_df,
-        duplicate_summary_df,
-        total_rows,
-        unique_count,
-        duplicate_count
+    uploaded_file = st.file_uploader(
+        "Upload scanner TXT file",
+        type=["txt"],
+        help="Select the original scanner TXT file."
     )
 
-
-# ============================================================
-# SAFE FILE NAME
-# ============================================================
-
-def safe_filename(filename):
-
-    stem = Path(filename).stem
-
-    stem = re.sub(
-        r"[^A-Za-z0-9_-]+",
-        "_",
-        stem
-    ).strip("_")
-
-    return stem or "scanner_file"
-
-
-# ============================================================
-# SAVE OUTPUT FILES
-# ============================================================
-
-def save_outputs(
-    unique_df,
-    duplicate_rows_df,
-    duplicate_summary_df,
-    invalid_df,
-    uploaded_filename,
-    department,
-    total_rows,
-    unique_count,
-    duplicate_count
-):
-
-    # Date on which the file is processed.
-    processing_date = datetime.now().strftime("%Y-%m-%d")
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Create department and date folders.
-    department_folder = (
-        DEFAULT_OUTPUT /
-        department.replace(" ", "_") /
-        processing_date
-    )
-
-    csv_folder = department_folder / "CSV"
-    reports_folder = department_folder / "Reports"
-
-    csv_folder.mkdir(parents=True, exist_ok=True)
-    reports_folder.mkdir(parents=True, exist_ok=True)
-
-    # Create output filename.
-    filename = safe_filename(uploaded_filename)
-
-    output_name = f"{filename}_{timestamp}"
-
-    csv_path = csv_folder / f"{output_name}.csv"
-
-    duplicate_detail_path = (
-        reports_folder /
-        f"{output_name}_duplicate_details.csv"
-    )
-
-    duplicate_summary_path = (
-        reports_folder /
-        f"{output_name}_duplicate_summary.csv"
-    )
-
-    invalid_path = (
-        reports_folder /
-        f"{output_name}_invalid_lines.csv"
-    )
-
-    summary_path = (
-        reports_folder /
-        f"{output_name}_summary.txt"
-    )
-
-    # Save cleaned barcode CSV.
-
-# Prepare CSV in the exact format expected by the ERP PHP upload.
-
-    erp_upload_df = unique_df[
-        ["Date", "Time", "ScannerID", "BarcodeNumber"]
-    ].copy()
-
-    erp_upload_df.to_csv(
-        csv_path,
-        index=False,
-        header=False,
-        encoding="utf-8",
-        lineterminator="\n"
-    )
-
-
-    # Save duplicate scan details.
-    duplicate_rows_df.to_csv(
-        duplicate_detail_path,
-        index=False,
-        encoding="utf-8-sig",
-        lineterminator="\n"
-    )
-
-    # Save duplicate summary.
-    duplicate_summary_df.to_csv(
-        duplicate_summary_path,
-        index=False,
-        encoding="utf-8-sig",
-        lineterminator="\n"
-    )
-
-    # Save invalid lines.
-    invalid_df.to_csv(
-        invalid_path,
-        index=False,
-        encoding="utf-8-sig",
-        lineterminator="\n"
-    )
-
-    # Save processing summary.
-    summary_text = (
-        f"Barcode Processing Summary\n"
-        f"==========================\n\n"
-        f"Source file: {uploaded_filename}\n"
-        f"Department: {department}\n"
-        f"Processing date: {processing_date}\n"
-        f"Processing time: {datetime.now().strftime('%H:%M:%S')}\n\n"
-        f"Total valid records: {total_rows}\n"
-        f"Unique barcodes: {unique_count}\n"
-        f"Duplicate scans removed: {duplicate_count}\n"
-        f"Invalid lines: {len(invalid_df)}\n\n"
-        f"Duplicate rule: BarcodeNumber only.\n"
-        f"First occurrence is retained.\n\n"
-        f"Cleaned CSV: {csv_path}\n"
-        f"Duplicate details: {duplicate_detail_path}\n"
-        f"Duplicate summary: {duplicate_summary_path}\n"
-        f"Invalid lines: {invalid_path}\n"
-    )
-
-    summary_path.write_text(
-        summary_text,
-        encoding="utf-8"
-    )
-
-    return (
-        department_folder,
-        csv_path,
-        duplicate_detail_path,
-        duplicate_summary_path,
-        invalid_path,
-        summary_path
-    )
-
-
-# ============================================================
-# APPLICATION INTERFACE
-# ============================================================
-
-st.title("📦 Barcode TXT to CSV Converter")
-
-st.write(
-    "Upload your scanner TXT file, select the department, "
-    "and process it to automatically save the cleaned CSV "
-    "and processing reports."
-)
-
-st.divider()
-
-
-# ============================================================
-# STEP 1: UPLOAD TXT FILE
-# ============================================================
-
-st.subheader("Step 1: Upload Scanner TXT File")
-
-uploaded_file = st.file_uploader(
-    "Select your scanner TXT file",
-    type=["txt"],
-    accept_multiple_files=False
-)
-
-
-# ============================================================
-# STEP 2: SELECT DEPARTMENT
-# ============================================================
-
-st.subheader("Step 2: Select Department")
-
-department = st.selectbox(
-    "Choose the department",
-    DEPARTMENTS
-)
-
-
-# ============================================================
-# DUPLICATE RULE
-# ============================================================
-
-with st.expander("Barcode processing rule"):
-
-    st.info(
-        "Duplicate checking is performed using BarcodeNumber only. "
-        "The first scan is retained. All later scans of the same "
-        "barcode are removed, even if the date, time or scanner ID "
-        "is different."
-    )
-
-
-st.divider()
-
-
-# ============================================================
-# STEP 3: PROCESS AND SAVE
-# ============================================================
-
-st.subheader("Step 3: Process and Save")
-
-if uploaded_file is not None:
-
-    st.write(f"**Selected file:** {uploaded_file.name}")
-
-    if st.button(
-        "Process",
+    submitted = st.form_submit_button(
+        "Start Processing",
         type="primary",
         use_container_width=True
-    ):
+    )
+
+
+# --------------------------------------------------
+# PROCESSING PIPELINE
+# --------------------------------------------------
+
+if submitted:
+
+    st.session_state.last_result = None
+
+    if uploaded_file is None:
+        st.error("Please upload a TXT file first.")
+
+    else:
 
         try:
+            department = get_department(selected_department)
 
-            # Read uploaded TXT file.
-            file_bytes = uploaded_file.getvalue()
+            original_file_bytes = uploaded_file.getvalue()
+            original_filename = uploaded_file.name
 
-            # Parse TXT file.
-            df, invalid_df = parse_scanner_txt(file_bytes)
+            processing_date = datetime.now()
 
-            # Process duplicates.
-            (
-                unique_df,
-                duplicate_rows_df,
-                duplicate_summary_df,
-                total_rows,
-                unique_count,
-                duplicate_count
-            ) = build_outputs(df)
+            # --------------------------------------
+            # STEP 1: PARSING
+            # --------------------------------------
 
-            # Display processing metrics.
-            st.subheader("Processing Results")
+            with st.status(
+                "Step 1/5: Reading and parsing TXT file...",
+                expanded=True
+            ) as status:
 
-            col1, col2, col3, col4 = st.columns(4)
-
-            col1.metric(
-                "Valid Records",
-                total_rows
-            )
-
-            col2.metric(
-                "Unique Barcodes",
-                unique_count
-            )
-
-            col3.metric(
-                "Duplicates Removed",
-                duplicate_count
-            )
-
-            col4.metric(
-                "Invalid Lines",
-                len(invalid_df)
-            )
-
-            # Show cleaned CSV preview.
-            st.subheader("Cleaned CSV Preview")
-
-            st.dataframe(
-                unique_df,
-                use_container_width=True
-            )
-
-            # Show duplicate report.
-            with st.expander("View Duplicate Scan Details"):
-
-                st.dataframe(
-                    duplicate_rows_df,
-                    use_container_width=True
+                valid_df, invalid_df = parse_scanner_txt(
+                    original_file_bytes
                 )
 
-                st.dataframe(
-                    duplicate_summary_df,
-                    use_container_width=True
+                total_rows = len(valid_df)
+                invalid_count = len(invalid_df)
+
+                st.write(
+                    f"Valid records: {total_rows:,}"
                 )
 
-            # Show invalid lines.
-            with st.expander("View Invalid Lines"):
-
-                if invalid_df.empty:
-
-                    st.success("No invalid lines found.")
-
-                else:
-
-                    st.dataframe(
-                        invalid_df,
-                        use_container_width=True
-                    )
-
-            # Save automatically after clicking Process.
-            if unique_count == 0:
-
-                st.warning(
-                    "No valid unique barcodes were found. "
-                    "No cleaned CSV was saved."
+                st.write(
+                    f"Invalid records: {invalid_count:,}"
                 )
 
-            else:
+                status.update(
+                    label="Step 1/5: TXT parsing completed",
+                    state="complete"
+                )
+
+            # --------------------------------------
+            # STEP 2: DUPLICATE PROCESSING
+            # --------------------------------------
+
+            with st.status(
+                "Step 2/5: Checking duplicate barcodes...",
+                expanded=True
+            ) as status:
 
                 (
-                    department_folder,
-                    csv_path,
-                    duplicate_detail_path,
-                    duplicate_summary_path,
-                    invalid_path,
-                    summary_path
-                ) = save_outputs(
                     unique_df,
                     duplicate_rows_df,
                     duplicate_summary_df,
-                    invalid_df,
-                    uploaded_file.name,
-                    department,
                     total_rows,
                     unique_count,
                     duplicate_count
+                ) = build_outputs(valid_df)
+
+                st.write(
+                    f"Unique barcodes: {unique_count:,}"
                 )
 
-                st.success(
-                    "Processing completed successfully. "
-                    "All output files have been saved."
+                st.write(
+                    f"Duplicate records: {duplicate_count:,}"
                 )
 
-                st.write("**Saved location:**")
-
-                st.code(str(department_folder))
-
-                st.write("**Cleaned CSV:**")
-
-                st.code(str(csv_path))
-
-                st.write("**Saved reports:**")
-
-                st.code(
-                    f"{duplicate_detail_path}\n"
-                    f"{duplicate_summary_path}\n"
-                    f"{invalid_path}\n"
-                    f"{summary_path}"
+                status.update(
+                    label="Step 2/5: Duplicate processing completed",
+                    state="complete"
                 )
 
-        except Exception as exc:
+            # --------------------------------------
+            # STEP 3: SUMMARY GENERATION
+            # --------------------------------------
 
+            with st.status(
+                "Step 3/5: Generating processing summary...",
+                expanded=True
+            ) as status:
+
+                summary_text = generate_processing_summary(
+                    department_name=department["name"],
+                    original_filename=original_filename,
+                    total_rows=total_rows,
+                    unique_count=unique_count,
+                    duplicate_count=duplicate_count,
+                    invalid_count=invalid_count,
+                    processing_date=processing_date
+                )
+
+                status.update(
+                    label="Step 3/5: Summary generated",
+                    state="complete"
+                )
+
+            # --------------------------------------
+            # STEP 4: FILE SAVING
+            # --------------------------------------
+
+            with st.status(
+                "Step 4/5: Saving output files...",
+                expanded=True
+            ) as status:
+
+                saved_files = save_outputs(
+                    department_id=selected_department,
+                    original_file_bytes=original_file_bytes,
+                    original_filename=original_filename,
+                    unique_df=unique_df,
+                    duplicate_rows_df=duplicate_rows_df,
+                    duplicate_summary_df=duplicate_summary_df,
+                    invalid_df=invalid_df,
+                    total_rows=total_rows,
+                    unique_count=unique_count,
+                    duplicate_count=duplicate_count,
+                    summary_text=summary_text,
+                    processing_date=processing_date
+                )
+
+                status.update(
+                    label="Step 4/5: Files saved successfully",
+                    state="complete"
+                )
+
+            # --------------------------------------
+            # STEP 5: ERP PREPARATION
+            # --------------------------------------
+
+            with st.status(
+                "Step 5/5: Preparing ERP upload data...",
+                expanded=True
+            ) as status:
+
+                erp_csv_path = saved_files["erp_csv_path"]
+
+                status.write(
+                    f"ERP CSV prepared: {erp_csv_path.name}"
+                )
+
+                status.write(
+                    "ERP upload has not been started."
+                )
+
+                status.update(
+                    label="Step 5/5: ERP CSV preparation completed",
+                    state="complete"
+                )
+
+            # --------------------------------------
+            # SAVE RESULT FOR DISPLAY
+            # --------------------------------------
+
+            st.session_state.last_result = {
+                "department": department["name"],
+                "filename": original_filename,
+                "saved_files": saved_files,
+                "valid_df": valid_df,
+                "invalid_df": invalid_df,
+                "unique_df": unique_df,
+                "duplicate_rows_df": duplicate_rows_df,
+                "duplicate_summary_df": duplicate_summary_df,
+                "summary_text": summary_text,
+                "total_rows": total_rows,
+                "unique_count": unique_count,
+                "duplicate_count": duplicate_count,
+                "invalid_count": invalid_count,
+            }
+
+            st.success("Barcode processing completed successfully!")
+
+        except FileExistsError as error:
             st.error(
-                f"An error occurred during processing: {exc}"
+                "Files already exist for this department and date. "
+                "No existing files were overwritten."
             )
+            st.code(str(error))
 
-else:
+        except Exception as error:
+            st.error("Processing failed.")
+            st.exception(error)
 
-    st.info(
-        "Please upload a scanner TXT file to begin."
+
+# --------------------------------------------------
+# RESULTS SECTION
+# --------------------------------------------------
+
+result = st.session_state.last_result
+
+if result:
+
+    st.divider()
+
+    st.subheader("2. Processing Results")
+
+    st.write(
+        f"**Department:** {result['department']}"
     )
 
+    st.write(
+        f"**Original file:** {result['filename']}"
+    )
 
-# ============================================================
-# FOOTER
-# ============================================================
+    # ----------------------------------------------
+    # SUMMARY METRICS
+    # ----------------------------------------------
 
-st.divider()
+    col1, col2, col3, col4 = st.columns(4)
 
-st.caption(
-    "Original TXT files are never modified. "
-    "The cleaned CSV keeps the first occurrence of each barcode. "
-    "All output files are saved locally in the selected department "
-    "and processing-date folder."
-)
+    col1.metric(
+        "Valid Records",
+        f"{result['total_rows']:,}"
+    )
+
+    col2.metric(
+        "Unique Barcodes",
+        f"{result['unique_count']:,}"
+    )
+
+    col3.metric(
+        "Duplicate Records",
+        f"{result['duplicate_count']:,}"
+    )
+
+    col4.metric(
+        "Invalid Records",
+        f"{result['invalid_count']:,}"
+    )
+
+    # ----------------------------------------------
+    # DATA PREVIEWS
+    # ----------------------------------------------
+
+    st.subheader("3. Data Inspection")
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "ERP CSV Preview",
+        "Duplicate Records",
+        "Invalid Lines",
+        "Duplicate Summary"
+    ])
+
+    with tab1:
+        st.caption(
+            "These are the unique records prepared for ERP upload. "
+            "The actual saved CSV has no header or index."
+        )
+
+        st.dataframe(
+            result["unique_df"],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    with tab2:
+        st.write(
+            f"Duplicate rows found: "
+            f"{result['duplicate_count']:,}"
+        )
+
+        st.dataframe(
+            result["duplicate_rows_df"],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    with tab3:
+        st.write(
+            f"Invalid lines found: "
+            f"{result['invalid_count']:,}"
+        )
+
+        st.dataframe(
+            result["invalid_df"],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    with tab4:
+        st.dataframe(
+            result["duplicate_summary_df"],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # ----------------------------------------------
+    # SAVED FILE LOCATIONS
+    # ----------------------------------------------
+
+    st.divider()
+
+    st.subheader("4. Saved Files")
+
+    saved_files = result["saved_files"]
+
+    st.write(
+        f"**Output folder:** `{saved_files['daily_folder']}`"
+    )
+
+    file_labels = {
+        "original_txt_path": "Original TXT",
+        "erp_csv_path": "ERP CSV",
+        "duplicate_details_path": "Duplicate Details",
+        "duplicate_summary_path": "Duplicate Summary",
+        "invalid_lines_path": "Invalid Lines",
+        "processing_summary_path": "Processing Summary",
+    }
+
+    for key, label in file_labels.items():
+
+        file_path = Path(saved_files[key])
+
+        if file_path.exists():
+            st.write(
+                f"✅ **{label}:** `{file_path}`"
+            )
+
+    # ----------------------------------------------
+    # PROCESSING SUMMARY
+    # ----------------------------------------------
+
+    with st.expander("View Processing Summary"):
+        st.text(result["summary_text"])
+
+    # ----------------------------------------------
+    # ERP STATUS
+    # ----------------------------------------------
+
+    st.divider()
+
+    st.subheader("5. ERP Upload Status")
+
+    st.info(
+        "The ERP CSV is ready, but no ERP request has been sent. "
+        "ERP automation will be implemented and tested separately."
+    )

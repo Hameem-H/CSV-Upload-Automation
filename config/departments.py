@@ -35,7 +35,7 @@ DEPARTMENTS = {
         "name": "Conv Start",
 
         "output_root": Path(
-            r"F:\Barcode\CONE LINE 1(Conveyer Start)\2026\2026-09"
+            r"D:\Barcode_testing\Conv Start"
         ),
 
         # Stage 1: Upload CSV
@@ -54,7 +54,7 @@ DEPARTMENTS = {
     "conv_end": {
         "name": "Conv End",
 
-        "output_root": None,
+        "output_root": "D:\Barcode_testing\Conv End",
 
         # Stage 1: Upload CSV
         "upload_url": None,
@@ -72,7 +72,7 @@ DEPARTMENTS = {
     "final_packing": {
         "name": "Final Packing",
 
-        "output_root": None,
+        "output_root": "D:\Barcode_testing\Fp",
 
         # Stage 1: Upload CSV
         "upload_url": None,
@@ -90,7 +90,7 @@ DEPARTMENTS = {
     "store_fgs": {
         "name": "Store FGS",
 
-        "output_root": None,
+        "output_root": "D:\Barcode_testing\FGS",
 
         # Stage 1: Upload CSV
         "upload_url": None,
