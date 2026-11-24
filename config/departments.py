@@ -21,7 +21,9 @@ DEPARTMENTS = {
         ),
 
         # Stickering has no separate Page 3.
-        "intermediate_url": None,
+        "intermediate_url": (
+            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+        ),
 
         # Existing final processing page.
         "process_url": (
@@ -38,10 +40,18 @@ DEPARTMENTS = {
 
         "output_root": Path(r"D:\Barcode_testing\Conv Start"),
 
-        "upload_url": None,
-        "submit_url": None,
-        "intermediate_url": None,
-        "process_url": None,
+         "upload_url": (
+            f"{ERP_BASE_URL}/constartL1.php"
+        ),
+        "submit_url": (
+            f"{ERP_BASE_URL}/constartL1barcodeprocess.php"
+        ),
+        "intermediate_url": (
+            f"{ERP_BASE_URL}/ProcessConstartL1.php"
+        ),
+        "process_url": (
+            f"{ERP_BASE_URL}/ProcessConSL1finalpro.php"
+        ),
 
         "workflow": "four_page",
         "enabled": True,
@@ -53,10 +63,18 @@ DEPARTMENTS = {
 
         "output_root": Path(r"D:\Barcode_testing\Conv End"),
 
-        "upload_url": None,
-        "submit_url": None,
-        "intermediate_url": None,
-        "process_url": None,
+         "upload_url": (
+            f"{ERP_BASE_URL}/conendL1.php"
+        ),
+        "submit_url": (
+            f"{ERP_BASE_URL}/conendL1barcodeprocess.php"
+        ),
+        "intermediate_url": (
+            f"{ERP_BASE_URL}/ProcessConendL1.php"
+        ),
+        "process_url": (
+            f"{ERP_BASE_URL}/ProcessConEL1finalpro.php"
+        ),
 
         "workflow": "four_page",
         "enabled": True,
@@ -98,10 +116,18 @@ DEPARTMENTS = {
 
         "output_root": Path(r"D:\Barcode_testing\FGS"),
 
-        "upload_url": None,
-        "submit_url": None,
-        "intermediate_url": None,
-        "process_url": None,
+         "upload_url": (
+            f"{ERP_BASE_URL}/stickeringbarcode.php"
+        ),
+        "submit_url": (
+            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+        ),
+        "intermediate_url": (
+            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+        ),
+        "process_url": (
+            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+        ),
 
         "workflow": "four_page",
         "enabled": True,
