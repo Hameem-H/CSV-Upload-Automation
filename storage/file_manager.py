@@ -1,8 +1,84 @@
 
 from pathlib import Path
 from datetime import datetime
+from threading import Lock
 
 from config.departments import get_department
+
+
+# Prevent two background jobs from selecting the same filenames
+# simultaneously within this application process.
+_FILE_SAVE_LOCK = Lock()
+
+
+def _build_file_paths(daily_folder, number=""):
+    """
+    Build all output paths for one upload.
+
+    The same number is applied to every file belonging to this upload.
+    """
+
+    reports_folder = daily_folder / "Reports"
+
+    return {
+        "original_txt_path": daily_folder / f"barcode{number}.txt",
+        "erp_csv_path": daily_folder / f"barcode{number}.csv",
+
+        "duplicate_details_path": (
+            reports_folder / f"duplicate_details{number}.csv"
+        ),
+
+        "duplicate_summary_path": (
+            reports_folder / f"duplicate_summary{number}.csv"
+        ),
+
+        "invalid_lines_path": (
+            reports_folder / f"invalid_lines{number}.csv"
+        ),
+
+        "processing_summary_path": (
+            reports_folder / f"processing_summary{number}.txt"
+        ),
+
+        "reports_folder": reports_folder,
+    }
+
+
+def _find_available_file_paths(daily_folder):
+    """
+    Find the next available filename set without overwriting
+    any existing output file.
+    """
+
+    number_index = 0
+
+    while True:
+
+        if number_index == 0:
+            suffix = ""
+        else:
+            suffix = f"({number_index})"
+
+        paths = _build_file_paths(
+            daily_folder,
+            suffix
+        )
+
+        all_paths = [
+            paths["original_txt_path"],
+            paths["erp_csv_path"],
+            paths["duplicate_details_path"],
+            paths["duplicate_summary_path"],
+            paths["invalid_lines_path"],
+            paths["processing_summary_path"],
+        ]
+
+        # A filename set is available only if every file is available.
+        if not any(path.exists() for path in all_paths):
+            paths["file_suffix"] = suffix
+            return paths
+
+        number_index += 1
 
 
 def save_outputs(
@@ -19,7 +95,9 @@ def save_outputs(
     summary_text,
     processing_date=None
 ):
+
     department = get_department(department_id)
+
     output_root = department["output_root"]
 
     if output_root is None:
@@ -50,105 +128,156 @@ def save_outputs(
 
     daily_folder.mkdir(parents=True, exist_ok=True)
 
-    original_txt_path = daily_folder / "barcode.txt"
-    erp_csv_path = daily_folder / "barcode.csv"
-    reports_folder = daily_folder / "Reports"
+    # ----------------------------------------------
+    # SELECT AVAILABLE FILENAMES
+    # ----------------------------------------------
 
-    report_paths = {
-        "duplicate_details": reports_folder / "duplicate_details.csv",
-        "duplicate_summary": reports_folder / "duplicate_summary.csv",
-        "invalid_lines": reports_folder / "invalid_lines.csv",
-        "processing_summary": reports_folder / "processing_summary.txt",
-    }
+    with _FILE_SAVE_LOCK:
 
-    # Check every expected file before writing anything.
-    all_file_paths = [
-        original_txt_path,
-        erp_csv_path,
-        *report_paths.values()
-    ]
+        paths = _find_available_file_paths(daily_folder)
 
-    existing_files = [
-        str(path) for path in all_file_paths if path.exists()
-    ]
+        reports_folder = paths["reports_folder"]
 
-    if existing_files:
-        raise FileExistsError(
-            "Files already exist for this department and date. "
-            "Nothing was overwritten:\n"
-            + "\n".join(existing_files)
+        reports_folder.mkdir(
+            parents=True,
+            exist_ok=True
         )
 
-    # Create Reports only after the collision check.
-    reports_folder.mkdir(exist_ok=True)
-
-    try:
-        # Preserve the original TXT bytes exactly as uploaded.
-        original_txt_path.write_bytes(original_file_bytes)
-
-        # ERP CSV: four columns, no header, no pandas index.
-        erp_columns = [
-            "Date",
-            "Time",
-            "ScannerID",
-            "BarcodeNumber"
+        all_file_paths = [
+            paths["original_txt_path"],
+            paths["erp_csv_path"],
+            paths["duplicate_details_path"],
+            paths["duplicate_summary_path"],
+            paths["invalid_lines_path"],
+            paths["processing_summary_path"],
         ]
 
-        erp_upload_df = unique_df[erp_columns].copy()
+        created_files = []
 
-        erp_upload_df.to_csv(
-            erp_csv_path,
-            index=False,
-            header=False,
-            encoding="utf-8",
-            lineterminator="\n"
-        )
+        try:
 
-        duplicate_rows_df.to_csv(
-            report_paths["duplicate_details"],
-            index=False,
-            encoding="utf-8-sig"
-        )
+            # --------------------------------------
+            # ORIGINAL TXT
+            # --------------------------------------
+            # Save the uploaded scanner TXT bytes exactly as received.
+            # No parsing, modification or conversion is applied here.
 
-        duplicate_summary_df.to_csv(
-            report_paths["duplicate_summary"],
-            index=False,
-            encoding="utf-8-sig"
-        )
+            paths["original_txt_path"].write_bytes(
+                original_file_bytes
+            )
 
-        invalid_df.to_csv(
-            report_paths["invalid_lines"],
-            index=False,
-            encoding="utf-8-sig"
-        )
+            created_files.append(
+                paths["original_txt_path"]
+            )
 
-        report_paths["processing_summary"].write_text(
-            summary_text,
-            encoding="utf-8"
-        )
+            # --------------------------------------
+            # ERP CSV
+            # --------------------------------------
 
-    except Exception:
-        # Remove partially written files if saving fails.
-        for path in all_file_paths:
-            if path.exists():
-                path.unlink()
+            erp_columns = [
+                "Date",
+                "Time",
+                "ScannerID",
+                "BarcodeNumber"
+            ]
 
-        if reports_folder.exists() and not any(reports_folder.iterdir()):
-            reports_folder.rmdir()
+            erp_upload_df = unique_df[erp_columns].copy()
 
-        raise
+            erp_upload_df.to_csv(
+                paths["erp_csv_path"],
+                index=False,
+                header=False,
+                encoding="utf-8",
+                lineterminator="\n"
+            )
+
+            created_files.append(
+                paths["erp_csv_path"]
+            )
+
+            # --------------------------------------
+            # DUPLICATE DETAILS
+            # --------------------------------------
+
+            duplicate_rows_df.to_csv(
+                paths["duplicate_details_path"],
+                index=False,
+                encoding="utf-8-sig"
+            )
+
+            created_files.append(
+                paths["duplicate_details_path"]
+            )
+
+            # --------------------------------------
+            # DUPLICATE SUMMARY
+            # --------------------------------------
+
+            duplicate_summary_df.to_csv(
+                paths["duplicate_summary_path"],
+                index=False,
+                encoding="utf-8-sig"
+            )
+
+            created_files.append(
+                paths["duplicate_summary_path"]
+            )
+
+            # --------------------------------------
+            # INVALID LINES
+            # --------------------------------------
+
+            invalid_df.to_csv(
+                paths["invalid_lines_path"],
+                index=False,
+                encoding="utf-8-sig"
+            )
+
+            created_files.append(
+                paths["invalid_lines_path"]
+            )
+
+            # --------------------------------------
+            # PROCESSING SUMMARY
+            # --------------------------------------
+
+            paths["processing_summary_path"].write_text(
+                summary_text,
+                encoding="utf-8"
+            )
+
+            created_files.append(
+                paths["processing_summary_path"]
+            )
+
+        except Exception:
+
+            # Remove only files created by this save operation.
+            # Existing files are never deleted.
+            for path in created_files:
+
+                if path.exists():
+                    path.unlink()
+
+            raise
 
     return {
         "department": department["name"],
         "original_filename": original_filename,
+
         "daily_folder": daily_folder,
-        "original_txt_path": original_txt_path,
-        "erp_csv_path": erp_csv_path,
         "reports_folder": reports_folder,
-        "duplicate_details_path": report_paths["duplicate_details"],
-        "duplicate_summary_path": report_paths["duplicate_summary"],
-        "invalid_lines_path": report_paths["invalid_lines"],
-        "processing_summary_path": report_paths["processing_summary"],
+
+        "original_txt_path": paths["original_txt_path"],
+        "erp_csv_path": paths["erp_csv_path"],
+
+        "duplicate_details_path": paths["duplicate_details_path"],
+        "duplicate_summary_path": paths["duplicate_summary_path"],
+        "invalid_lines_path": paths["invalid_lines_path"],
+        "processing_summary_path": paths["processing_summary_path"],
+
+        "file_suffix": paths["file_suffix"],
+
         "total_rows": total_rows,
         "unique_count": unique_count,
         "duplicate_count": duplicate_count,
