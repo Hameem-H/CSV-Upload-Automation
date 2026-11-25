@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, date
 from pathlib import Path
 
+from automation.browser_manager import submit_department_task
 from config.departments import get_department
 
 from core.parser import parse_scanner_txt
@@ -39,11 +40,10 @@ _PREPARATION_EXECUTOR = ThreadPoolExecutor(
     thread_name_prefix="Barcode-Preparation"
 )
 
-# ERP workflows must run sequentially.
-_ERP_EXECUTOR = ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix="Barcode-ERP"
-)
+# ERP workers are managed by browser_manager.py.
+# Each department has its own single-threaded worker.
+# Different departments can run simultaneously.
+# Jobs within the same department remain sequential.
 
 
 # --------------------------------------------------
@@ -79,6 +79,7 @@ def initialize_job_manager():
 # --------------------------------------------------
 
 def _make_job_id():
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     unique_part = uuid.uuid4().hex[:6].upper()
@@ -130,23 +131,17 @@ def _fail_job(job_id, stage, error, erp_result=None):
     background worker to disappear silently.
     """
 
-    try:
-
-        update_job(
-            job_id=job_id,
-            status="failed",
-            stage=stage,
-            message=str(error),
-            error=str(error),
-            progress=100 if stage == "Preparation failed" else None,
-            erp_result=_json_safe(erp_result)
-            if erp_result is not None
-            else None
-        )
-
-    except Exception:
-        # The original exception must remain visible in the worker.
-        raise
+    update_job(
+        job_id=job_id,
+        status="failed",
+        stage=stage,
+        message=str(error),
+        error=str(error),
+        progress=100 if stage == "Preparation failed" else None,
+        erp_result=_json_safe(erp_result)
+        if erp_result is not None
+        else None
+    )
 
 
 # --------------------------------------------------
@@ -221,6 +216,10 @@ def _prepare_job(
     original_file_bytes,
     storage_date
 ):
+    """
+    Parse TXT, process duplicates, save output files,
+    and submit the ERP task to its department worker.
+    """
 
     try:
 
@@ -353,15 +352,21 @@ def _prepare_job(
             status="queued",
             stage="Waiting for ERP",
             progress=60,
-            message="Preparation completed. Waiting for ERP worker."
+            message=(
+                "Preparation completed. "
+                "Waiting for department ERP worker."
+            )
         )
 
-        # ERP execution happens in a separate single-worker queue.
-        _ERP_EXECUTOR.submit(
+        # Submit to the dedicated department worker.
+        # Different departments can execute concurrently.
+        # The same department's jobs execute sequentially.
+        submit_department_task(
+            department_id,
             _run_erp_job,
             job_id,
             department_id,
-            erp_csv_path
+            erp_csv_path,
         )
 
     except Exception as error:
@@ -384,13 +389,16 @@ def _update_erp_progress(
     state="running",
     details=None
 ):
+    """
+    Update the individual job's ERP progress.
+    """
 
     current_job = get_job(job_id)
 
     if current_job is None:
         return
 
-    current_progress = current_job.get("progress", 60)
+    current_progress = current_job.get("progress", 60) or 60
 
     # Move progress forward without reaching 100 before completion.
     new_progress = min(
@@ -419,6 +427,12 @@ def _run_erp_job(
     department_id,
     erp_csv_path
 ):
+    """
+    Runs inside the dedicated department worker thread.
+
+    Playwright browser creation, usage and cleanup must remain
+    on this same thread.
+    """
 
     erp_result = None
 
@@ -434,10 +448,12 @@ def _run_erp_job(
             message="ERP automation has started."
         )
 
-        # Reuse the existing Playwright and ERP workflow.
+        # Run the existing ERP workflow directly.
+        # Do not submit another nested worker here.
         erp_result = upload_and_process(
             department=department,
             csv_path=erp_csv_path,
+            department_id=department_id,
             progress_callback=lambda stage, message,
                                     state="running", details=None:
                 _update_erp_progress(
@@ -450,6 +466,11 @@ def _run_erp_job(
         )
 
         erp_result = _json_safe(erp_result)
+
+        if not isinstance(erp_result, dict):
+            raise RuntimeError(
+                "ERP workflow returned an invalid result."
+            )
 
         if not erp_result.get("completion_verified", False):
 

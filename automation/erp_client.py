@@ -1,16 +1,11 @@
-
 import os
-import queue
 from pathlib import Path
 
 from dotenv import load_dotenv
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from .browser_manager import (
-    _WORKER,
-    close_erp_browser,
     get_or_create_browser_worker,
-    is_erp_browser_open,
     set_active_page,
 )
 from .erp_helpers import (
@@ -47,7 +42,9 @@ def _upload_and_process_worker(
     csv_path,
     timeout,
     progress_callback,
+    department_id,
 ):
+    page = None
     csv_path = Path(csv_path)
 
     if not csv_path.is_file():
@@ -107,10 +104,16 @@ def _upload_and_process_worker(
             "Connecting to ERP browser...",
         )
 
-        _, context = get_or_create_browser_worker()
+        _, context = get_or_create_browser_worker(
+            department_id
+        )
 
         page = context.new_page()
-        set_active_page(page)
+
+        set_active_page(
+            department_id,
+            page
+        )
         page.set_default_timeout(PAGE_TIMEOUT)
 
         notify(
@@ -231,64 +234,33 @@ def _upload_and_process_worker(
             f"ERP automation failed: {error}",
             result,
         ) from error
+    finally:
+        if page is not None:
+            try:
+                page.close()
+            except Exception as error:
+                print("Page close warning:", error)
 
+        set_active_page(department_id, None)
 
 def upload_and_process(
     department,
     csv_path,
     timeout=DEFAULT_TIMEOUT,
     progress_callback=None,
+    department_id=None,
 ):
-    progress_queue = queue.Queue()
-
-    def queue_progress(
-        stage,
-        message,
-        state="running",
-        details=None,
-    ):
-        progress_queue.put(
-            (stage, message, state, details or {})
+    if not department_id:
+        raise ValueError(
+            "department_id is required for parallel ERP processing."
         )
 
-    future = _WORKER.submit(
-        _upload_and_process_worker,
+    # This function runs directly on the department's
+    # dedicated worker thread. Do not submit it to another worker.
+    return _upload_and_process_worker(
         department,
         csv_path,
         timeout,
-        queue_progress if progress_callback else None,
+        progress_callback,
+        department_id,
     )
-
-    while not future.done():
-        try:
-            event = progress_queue.get(timeout=0.15)
-
-            if progress_callback:
-                notify(
-                    progress_callback,
-                    event[0],
-                    event[1],
-                    event[2],
-                    event[3],
-                )
-
-        except queue.Empty:
-            pass
-
-    while True:
-        try:
-            event = progress_queue.get_nowait()
-
-            if progress_callback:
-                notify(
-                    progress_callback,
-                    event[0],
-                    event[1],
-                    event[2],
-                    event[3],
-                )
-
-        except queue.Empty:
-            break
-
-    return future.result()

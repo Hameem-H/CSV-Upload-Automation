@@ -2,21 +2,25 @@
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
-from config.departments import (
-    get_department,
-    get_department_names,
-)
+from config.departments import get_department_names
 
-from core.parser import parse_scanner_txt
-from core.duplicate_processor import build_outputs
-from core.report_generator import generate_processing_summary
-from storage.file_manager import save_outputs
+from jobs.job_manager import (
+    submit_job,
+    get_jobs,
+    get_running_jobs,
+    initialize_job_manager,
+    has_active_jobs,
+)
 
 from automation.erp_client import (
     upload_and_process,
     ERPStageError,
+)
+
+from automation.browser_manager import (
     close_erp_browser,
     is_erp_browser_open,
 )
@@ -34,27 +38,30 @@ st.set_page_config(
 
 
 # --------------------------------------------------
+# INITIALIZATION
+# --------------------------------------------------
+
+initialize_job_manager()
+
+
+if "uploader_generation" not in st.session_state:
+    st.session_state.uploader_generation = 0
+
+if "last_submitted_job" not in st.session_state:
+    st.session_state.last_submitted_job = None
+
+
+# --------------------------------------------------
 # PAGE HEADER
 # --------------------------------------------------
 
 st.title("Barcode Automation Dashboard")
 
 st.caption(
-    "Scanner TXT processing, duplicate removal and ERP CSV preparation"
+    "Scanner TXT processing, duplicate removal and automatic ERP upload"
 )
 
 st.divider()
-
-
-# --------------------------------------------------
-# SESSION STATE
-# --------------------------------------------------
-
-if "last_result" not in st.session_state:
-    st.session_state.last_result = None
-
-if "erp_result" not in st.session_state:
-    st.session_state.erp_result = None
 
 
 # --------------------------------------------------
@@ -66,7 +73,6 @@ department_options = get_department_names()
 if not department_options:
 
     st.error("No departments are currently enabled.")
-
     st.stop()
 
 
@@ -86,17 +92,12 @@ with st.form("barcode_processing_form"):
         ]
     )
 
-    # ----------------------------------------------
-    # STORAGE DATE OVERRIDE
-    # ----------------------------------------------
-
     selected_storage_date = st.date_input(
         "Storage Date",
         value=datetime.now().date(),
         help=(
-            "By default, today's date is selected. "
             "Change this date when processing historical scanner data. "
-            "This date controls the output folder and processing summary."
+            "It controls the output folder and processing summary."
         )
     )
 
@@ -108,7 +109,8 @@ with st.form("barcode_processing_form"):
     uploaded_file = st.file_uploader(
         "Upload scanner TXT file",
         type=["txt"],
-        help="Select the original scanner TXT file."
+        key=f"scanner_txt_{st.session_state.uploader_generation}",
+        help="Select one original scanner TXT file."
     )
 
     submitted = st.form_submit_button(
@@ -119,14 +121,10 @@ with st.form("barcode_processing_form"):
 
 
 # --------------------------------------------------
-# PROCESSING PIPELINE
+# SUBMIT NEW JOB
 # --------------------------------------------------
 
 if submitted:
-
-    # Clear previous results before processing a new file.
-    st.session_state.last_result = None
-    st.session_state.erp_result = None
 
     if uploaded_file is None:
 
@@ -136,659 +134,592 @@ if submitted:
 
         try:
 
-            department = get_department(selected_department)
-
             original_file_bytes = uploaded_file.getvalue()
             original_filename = uploaded_file.name
 
-            # Use selected date instead of always using today's date.
-            # Keep the current time for the processing timestamp.
-            processing_date = datetime.combine(
-                selected_storage_date,
-                datetime.now().time()
-            )
+            if not original_file_bytes:
 
-            # --------------------------------------
-            # STEP 1: PARSING
-            # --------------------------------------
+                st.error("The uploaded TXT file is empty.")
 
-            with st.status(
-                "Step 1/5: Reading and parsing TXT file...",
-                expanded=True
-            ) as status:
+            else:
 
-                valid_df, invalid_df = parse_scanner_txt(
-                    original_file_bytes
-                )
-
-                total_rows = len(valid_df)
-                invalid_count = len(invalid_df)
-
-                st.write(
-                    f"Valid records: {total_rows:,}"
-                )
-
-                st.write(
-                    f"Invalid records: {invalid_count:,}"
-                )
-
-                status.update(
-                    label="Step 1/5: TXT parsing completed",
-                    state="complete"
-                )
-
-            # --------------------------------------
-            # STEP 2: DUPLICATE PROCESSING
-            # --------------------------------------
-
-            with st.status(
-                "Step 2/5: Checking duplicate barcodes...",
-                expanded=True
-            ) as status:
-
-                (
-                    unique_df,
-                    duplicate_rows_df,
-                    duplicate_summary_df,
-                    total_rows,
-                    unique_count,
-                    duplicate_count
-                ) = build_outputs(valid_df)
-
-                st.write(
-                    f"Unique barcodes: {unique_count:,}"
-                )
-
-                st.write(
-                    f"Duplicate records: {duplicate_count:,}"
-                )
-
-                status.update(
-                    label="Step 2/5: Duplicate processing completed",
-                    state="complete"
-                )
-
-            # --------------------------------------
-            # STEP 3: SUMMARY GENERATION
-            # --------------------------------------
-
-            with st.status(
-                "Step 3/5: Generating processing summary...",
-                expanded=True
-            ) as status:
-
-                summary_text = generate_processing_summary(
-                    department_name=department["name"],
-                    original_filename=original_filename,
-                    total_rows=total_rows,
-                    unique_count=unique_count,
-                    duplicate_count=duplicate_count,
-                    invalid_count=invalid_count,
-                    processing_date=processing_date
-                )
-
-                status.update(
-                    label="Step 3/5: Summary generated",
-                    state="complete"
-                )
-
-            # --------------------------------------
-            # STEP 4: FILE SAVING
-            # --------------------------------------
-
-            with st.status(
-                "Step 4/5: Saving output files...",
-                expanded=True
-            ) as status:
-
-                saved_files = save_outputs(
+                new_job = submit_job(
                     department_id=selected_department,
-                    original_file_bytes=original_file_bytes,
                     original_filename=original_filename,
-                    unique_df=unique_df,
-                    duplicate_rows_df=duplicate_rows_df,
-                    duplicate_summary_df=duplicate_summary_df,
-                    invalid_df=invalid_df,
-                    total_rows=total_rows,
-                    unique_count=unique_count,
-                    duplicate_count=duplicate_count,
-                    summary_text=summary_text,
-                    processing_date=processing_date
+                    original_file_bytes=original_file_bytes,
+                    storage_date=selected_storage_date
                 )
 
-                status.update(
-                    label="Step 4/5: Files saved successfully",
-                    state="complete"
+                st.session_state.last_submitted_job = (
+                    new_job["job_id"]
                 )
 
-            # --------------------------------------
-            # STEP 5: ERP PREPARATION
-            # --------------------------------------
+                # Change the uploader key so the next run
+                # displays an empty file uploader.
+                st.session_state.uploader_generation += 1
 
-            with st.status(
-                "Step 5/5: Preparing ERP upload data...",
-                expanded=True
-            ) as status:
-
-                erp_csv_path = Path(
-                    saved_files["erp_csv_path"]
-                )
-
-                st.write(
-                    f"ERP CSV prepared: {erp_csv_path.name}"
-                )
-
-                st.write(
-                    "ERP upload has not been started."
-                )
-
-                status.update(
-                    label="Step 5/5: ERP CSV preparation completed",
-                    state="complete"
-                )
-
-            # --------------------------------------
-            # SAVE RESULT FOR DISPLAY
-            # --------------------------------------
-
-            st.session_state.last_result = {
-                "department": department["name"],
-
-                # Required for ERP configuration lookup.
-                "department_id": selected_department,
-
-                "filename": original_filename,
-                "storage_date": selected_storage_date,
-                "saved_files": saved_files,
-
-                "valid_df": valid_df,
-                "invalid_df": invalid_df,
-                "unique_df": unique_df,
-                "duplicate_rows_df": duplicate_rows_df,
-                "duplicate_summary_df": duplicate_summary_df,
-
-                "summary_text": summary_text,
-
-                "total_rows": total_rows,
-                "unique_count": unique_count,
-                "duplicate_count": duplicate_count,
-                "invalid_count": invalid_count,
-            }
-
-            st.success(
-                "Barcode processing completed successfully!"
-            )
-
-        except FileExistsError as error:
-
-            st.error(
-                "Files already exist for this department and date. "
-                "No existing files were overwritten."
-            )
-
-            st.code(str(error))
+                st.rerun()
 
         except Exception as error:
 
-            st.error("Processing failed.")
+            st.error("Could not submit the processing job.")
             st.exception(error)
 
 
 # --------------------------------------------------
-# GET LATEST PROCESSING RESULT
+# SUBMISSION CONFIRMATION
 # --------------------------------------------------
 
-result = st.session_state.last_result
+if st.session_state.last_submitted_job:
+
+    st.success(
+        f"Job submitted successfully: "
+        f"{st.session_state.last_submitted_job}"
+    )
+
+    st.caption(
+        "You can now select another TXT file while this job continues "
+        "in the background."
+    )
 
 
 # --------------------------------------------------
-# ERP UPLOAD SECTION
-# This appears after the Start Processing pipeline.
-# The upload button is never blocked by browser status.
+# JOB STATUS DASHBOARD
 # --------------------------------------------------
 
 st.divider()
 
-st.subheader("2. ERP Upload")
+st.subheader("2. Job Dashboard")
 
-if not result:
 
-    st.info(
-        "Process a TXT file first to prepare the ERP CSV."
+@st.fragment(run_every="2s")
+def render_job_dashboard():
+
+    jobs = get_jobs()
+    active_jobs = get_running_jobs()
+
+    # ----------------------------------------------
+    # JOB COUNTERS
+    # ----------------------------------------------
+
+    total_jobs = len(jobs)
+
+    queued_jobs = sum(
+        1 for job in jobs
+        if job["status"] == "queued"
     )
 
-else:
-
-    last_result = result
-
-    erp_csv_path = Path(
-        last_result["saved_files"]["erp_csv_path"]
+    preparing_jobs = sum(
+        1 for job in jobs
+        if job["status"] == "preparing"
     )
 
-    department_id = last_result["department_id"]
-
-    department = get_department(department_id)
-
-    st.write(
-        f"**Department:** {department['name']}"
+    running_jobs = sum(
+        1 for job in jobs
+        if job["status"] == "running"
     )
 
-    st.write(
-        f"**ERP CSV:** `{erp_csv_path.name}`"
+    completed_jobs = sum(
+        1 for job in jobs
+        if job["status"] == "completed"
     )
 
-    if not erp_csv_path.is_file():
+    failed_jobs = sum(
+        1 for job in jobs
+        if job["status"] in ("failed", "interrupted")
+    )
 
-        st.error(
-            "The ERP CSV file could not be found."
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    col1.metric("Total Jobs", total_jobs)
+
+    col2.metric(
+        "Preparing / Queued",
+        preparing_jobs + queued_jobs
+    )
+
+    col3.metric("ERP Running", running_jobs)
+
+    col4.metric("Completed", completed_jobs)
+
+    col5.metric("Failed", failed_jobs)
+
+    st.divider()
+
+    # ----------------------------------------------
+    # ACTIVE JOBS
+    # ----------------------------------------------
+
+    st.markdown("### Active Jobs")
+
+    if not active_jobs:
+
+        st.info("There are currently no active jobs.")
+
+    else:
+
+        for job in active_jobs:
+
+            with st.container(border=True):
+
+                st.markdown(
+                    f"**{job['job_id']} — {job['department']}**"
+                )
+
+                st.caption(
+                    f"File: {job['original_filename']}"
+                )
+
+                st.write(
+                    f"**Status:** {job['status'].replace('_', ' ').title()}"
+                )
+
+                st.write(
+                    f"**Stage:** {job['stage']}"
+                )
+
+                st.progress(
+                    job.get("progress", 0),
+                    text=job.get("message", "")
+                )
+
+                if job["status"] == "queued":
+
+                    st.caption(
+                        "Preparation is complete. Waiting for the ERP worker."
+                    )
+
+    # ----------------------------------------------
+    # JOB HISTORY
+    # ----------------------------------------------
+
+    st.divider()
+
+    st.markdown("### All Jobs")
+
+    if not jobs:
+
+        st.info(
+            "No jobs have been submitted yet. "
+            "Upload a scanner TXT file to get started."
         )
 
     else:
 
-        st.warning(
-            "ERP processing may take several minutes. "
-            "Do not retry unless you have checked ERP records."
-        )
+        for job in jobs:
 
-        required_urls = [
-            "upload_url",
-            "submit_url",
-            "process_url"
-        ]
+            status = job["status"]
 
-        missing_urls = [
-            key
-            for key in required_urls
-            if not department.get(key)
-        ]
+            if status == "completed":
+                status_icon = "✅"
 
-        if missing_urls:
+            elif status == "failed":
+                status_icon = "❌"
 
-            st.warning(
-                f"ERP automation is not configured for "
-                f"{department['name']} yet."
-            )
+            elif status == "interrupted":
+                status_icon = "⚠️"
 
-        else:
+            elif status == "running":
+                status_icon = "🔄"
 
-            # --------------------------------------
-            # BROWSER STATUS
-            # --------------------------------------
-
-            if is_erp_browser_open():
-
-                st.info(
-                    "An ERP browser is already open. "
-                    "The next upload will use that browser "
-                    "and open a new tab."
-                )
+            elif status == "queued":
+                status_icon = "⏳"
 
             else:
-
-                st.caption(
-                    "An ERP browser will open when you start uploading."
-                )
-
-            # --------------------------------------
-            # UPLOAD BUTTON
-            # --------------------------------------
-            #
-            # IMPORTANT:
-            # This button is always available.
-            # Browser status does not disable or hide it.
-            # --------------------------------------
-
-            if st.button(
-                "Upload to ERP",
-                type="primary",
-                width="stretch",
-                key="upload_to_erp"
-            ):
-
-                progress_messages = []
-
-                with st.status(
-                    "ERP automation running...",
-                    expanded=True
-                ) as erp_status:
-
-                    progress_area = st.empty()
-
-                    def update_erp_progress(
-                        stage,
-                        message,
-                        state="running",
-                        details=None
-                    ):
-
-                        progress_messages.append(
-                            f"**{stage.replace('_', ' ').title()}:** {message}"
-                        )
-
-                        progress_area.markdown(
-                            "\n\n".join(progress_messages)
-                        )
-
-                    try:
-
-                        erp_result = upload_and_process(
-                            department=department,
-                            csv_path=erp_csv_path,
-                            progress_callback=update_erp_progress
-                        )
-
-                        st.session_state.erp_result = erp_result
-
-                        erp_status.update(
-                            label="ERP automation completed",
-                            state="complete",
-                            expanded=True
-                        )
-
-                        st.success(
-                            erp_result["message"]
-                        )
-
-                    except ERPStageError as error:
-
-                        st.session_state.erp_result = (
-                            error.result if error.result else None
-                        )
-
-                        erp_status.update(
-                            label="ERP automation failed",
-                            state="error",
-                            expanded=True
-                        )
-
-                        st.error(str(error))
-
-                        st.warning(
-                            "Do not upload again until ERP records "
-                            "have been checked."
-                        )
-
-                    except Exception as error:
-
-                        st.session_state.erp_result = None
-
-                        erp_status.update(
-                            label="Unexpected ERP error",
-                            state="error",
-                            expanded=True
-                        )
-
-                        st.exception(error)
-
-            # --------------------------------------
-            # CLOSE BROWSER BUTTON
-            # --------------------------------------
-            #
-            # Separate from Upload to ERP.
-            # Closing is optional and never required
-            # before starting another upload.
-            # --------------------------------------
-
-            if is_erp_browser_open():
-
-                if st.button(
-                    "Close ERP Browser",
-                    key="close_erp_browser"
-                ):
-
-                    try:
-
-                        close_erp_browser()
-
-                        st.success(
-                            "ERP browser closed."
-                        )
-
-                        st.rerun()
-
-                    except Exception as error:
-
-                        st.error(
-                            f"Could not close ERP browser: {error}"
-                        )
-
-
-# --------------------------------------------------
-# RESULTS SECTION
-# --------------------------------------------------
-
-if result:
-
-    st.divider()
-
-    st.subheader("3. Processing Results")
-
-    st.write(
-        f"**Department:** {result['department']}"
-    )
-
-    st.write(
-        f"**Original file:** {result['filename']}"
-    )
-
-    st.write(
-        f"**Storage date:** "
-        f"{result['storage_date'].strftime('%d-%m-%Y')}"
-    )
-
-    # ----------------------------------------------
-    # SUMMARY METRICS
-    # ----------------------------------------------
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    col1.metric(
-        "Valid Records",
-        f"{result['total_rows']:,}"
-    )
-
-    col2.metric(
-        "Unique Barcodes",
-        f"{result['unique_count']:,}"
-    )
-
-    col3.metric(
-        "Duplicate Records",
-        f"{result['duplicate_count']:,}"
-    )
-
-    col4.metric(
-        "Invalid Records",
-        f"{result['invalid_count']:,}"
-    )
-
-    # ----------------------------------------------
-    # DATA PREVIEWS
-    # ----------------------------------------------
-
-    st.subheader("4. Data Inspection")
-
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "ERP CSV Preview",
-        "Duplicate Records",
-        "Invalid Lines",
-        "Duplicate Summary"
-    ])
-
-    with tab1:
-
-        st.caption(
-            "These are the unique records prepared for ERP upload. "
-            "The actual saved CSV has no header or index."
-        )
-
-        st.dataframe(
-            result["unique_df"],
-            width="stretch",
-            hide_index=True
-        )
-
-    with tab2:
-
-        st.write(
-            f"Duplicate rows found: "
-            f"{result['duplicate_count']:,}"
-        )
-
-        st.dataframe(
-            result["duplicate_rows_df"],
-            width="stretch",
-            hide_index=True
-        )
-
-    with tab3:
-
-        st.write(
-            f"Invalid lines found: "
-            f"{result['invalid_count']:,}"
-        )
-
-        st.dataframe(
-            result["invalid_df"],
-            width="stretch",
-            hide_index=True
-        )
-
-    with tab4:
-
-        st.dataframe(
-            result["duplicate_summary_df"],
-            width="stretch",
-            hide_index=True
-        )
-
-    # ----------------------------------------------
-    # SAVED FILE LOCATIONS
-    # ----------------------------------------------
-
-    st.divider()
-
-    st.subheader("5. Saved Files")
-
-    saved_files = result["saved_files"]
-
-    st.write(
-        f"**Output folder:** `{saved_files['daily_folder']}`"
-    )
-
-    file_labels = {
-        "original_txt_path": "Original TXT",
-        "erp_csv_path": "ERP CSV",
-        "duplicate_details_path": "Duplicate Details",
-        "duplicate_summary_path": "Duplicate Summary",
-        "invalid_lines_path": "Invalid Lines",
-        "processing_summary_path": "Processing Summary",
-    }
-
-    for key, label in file_labels.items():
-
-        if key not in saved_files:
-            continue
-
-        file_path = Path(saved_files[key])
-
-        if file_path.exists():
-
-            st.write(
-                f"✅ **{label}:** `{file_path}`"
+                status_icon = "⚙️"
+
+            expander_title = (
+                f"{status_icon} {job['job_id']} | "
+                f"{job['department']} | "
+                f"{job['original_filename']}"
             )
 
+            with st.expander(expander_title):
+
+                # ----------------------------------
+                # JOB INFORMATION
+                # ----------------------------------
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.write(
+                        f"**Job ID:** {job['job_id']}"
+                    )
+
+                    st.write(
+                        f"**Department:** {job['department']}"
+                    )
+
+                    st.write(
+                        f"**Original file:** {job['original_filename']}"
+                    )
+
+                    st.write(
+                        f"**Storage date:** {job['storage_date']}"
+                    )
+
+                with col2:
+
+                    st.write(
+                        f"**Status:** {status.replace('_', ' ').title()}"
+                    )
+
+                    st.write(
+                        f"**Created:** {job['created_at']}"
+                    )
+
+                    st.write(
+                        f"**Started:** {job.get('started_at') or 'Not started'}"
+                    )
+
+                    st.write(
+                        f"**Completed:** {job.get('completed_at') or 'Not completed'}"
+                    )
+
+                st.progress(
+                    job.get("progress", 0),
+                    text=job.get("message", "")
+                )
+
+                # ----------------------------------
+                # PROCESSING METRICS
+                # ----------------------------------
+
+                metrics = job.get("metrics", {})
+
+                if metrics:
+
+                    st.markdown("#### Processing Metrics")
+
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    col1.metric(
+                        "Valid Records",
+                        f"{metrics.get('total_rows', 0):,}"
+                    )
+
+                    col2.metric(
+                        "Unique Barcodes",
+                        f"{metrics.get('unique_count', 0):,}"
+                    )
+
+                    col3.metric(
+                        "Duplicates",
+                        f"{metrics.get('duplicate_count', 0):,}"
+                    )
+
+                    col4.metric(
+                        "Invalid Records",
+                        f"{metrics.get('invalid_count', 0):,}"
+                    )
+
+                # ----------------------------------
+                # SAVED FILES
+                # ----------------------------------
+
+                saved_files = job.get("saved_files", {})
+
+                if saved_files:
+
+                    st.markdown("#### Saved Files")
+
+                    st.write(
+                        f"**Output folder:** "
+                        f"`{saved_files.get('daily_folder', 'N/A')}`"
+                    )
+
+                    file_labels = {
+                        "original_txt_path": "Original TXT",
+                        "erp_csv_path": "ERP CSV",
+                        "duplicate_details_path": "Duplicate Details",
+                        "duplicate_summary_path": "Duplicate Summary",
+                        "invalid_lines_path": "Invalid Lines",
+                        "processing_summary_path": "Processing Summary",
+                    }
+
+                    for key, label in file_labels.items():
+
+                        file_path = saved_files.get(key)
+
+                        if file_path and Path(file_path).is_file():
+
+                            st.write(
+                                f"**{label}:** `{file_path}`"
+                            )
+
+                # ----------------------------------
+                # DATA INSPECTION
+                # ----------------------------------
+
+                if saved_files:
+
+                    with st.expander("Inspect Job Data"):
+
+                        # ERP CSV
+                        erp_csv = saved_files.get("erp_csv_path")
+
+                        if erp_csv and Path(erp_csv).is_file():
+
+                            st.markdown("**ERP CSV Preview**")
+
+                            try:
+
+                                erp_df = pd.read_csv(
+                                    erp_csv,
+                                    header=None,
+                                    names=[
+                                        "Date",
+                                        "Time",
+                                        "ScannerID",
+                                        "BarcodeNumber"
+                                    ]
+                                )
+
+                                st.dataframe(
+                                    erp_df,
+                                    width="stretch",
+                                    hide_index=True
+                                )
+
+                            except Exception as error:
+
+                                st.warning(
+                                    f"Could not read ERP CSV: {error}"
+                                )
+
+                        # Duplicate details
+                        duplicate_file = saved_files.get(
+                            "duplicate_details_path"
+                        )
+
+                        if duplicate_file and Path(duplicate_file).is_file():
+
+                            st.markdown("**Duplicate Records**")
+
+                            try:
+
+                                duplicate_df = pd.read_csv(
+                                    duplicate_file
+                                )
+
+                                st.dataframe(
+                                    duplicate_df,
+                                    width="stretch",
+                                    hide_index=True
+                                )
+
+                            except Exception as error:
+
+                                st.warning(
+                                    f"Could not read duplicate report: {error}"
+                                )
+
+                        # Invalid lines
+                        invalid_file = saved_files.get(
+                            "invalid_lines_path"
+                        )
+
+                        if invalid_file and Path(invalid_file).is_file():
+
+                            st.markdown("**Invalid Lines**")
+
+                            try:
+
+                                invalid_df = pd.read_csv(
+                                    invalid_file
+                                )
+
+                                st.dataframe(
+                                    invalid_df,
+                                    width="stretch",
+                                    hide_index=True
+                                )
+
+                            except Exception as error:
+
+                                st.warning(
+                                    f"Could not read invalid report: {error}"
+                                )
+
+                        # Duplicate summary
+                        summary_file = saved_files.get(
+                            "duplicate_summary_path"
+                        )
+
+                        if summary_file and Path(summary_file).is_file():
+
+                            st.markdown("**Duplicate Summary**")
+
+                            try:
+
+                                duplicate_summary_df = pd.read_csv(
+                                    summary_file
+                                )
+
+                                st.dataframe(
+                                    duplicate_summary_df,
+                                    width="stretch",
+                                    hide_index=True
+                                )
+
+                            except Exception as error:
+
+                                st.warning(
+                                    f"Could not read duplicate summary: {error}"
+                                )
+
+                        # Processing summary
+                        processing_summary_file = saved_files.get(
+                            "processing_summary_path"
+                        )
+
+                        if (
+                            processing_summary_file
+                            and Path(processing_summary_file).is_file()
+                        ):
+
+                            with st.expander("Processing Summary"):
+
+                                st.text(
+                                    Path(processing_summary_file).read_text(
+                                        encoding="utf-8"
+                                    )
+                                )
+
+                # ----------------------------------
+                # ERP RESULT
+                # ----------------------------------
+
+                erp_result = job.get("erp_result")
+
+                if erp_result:
+
+                    st.markdown("#### ERP Result")
+
+                    col1, col2, col3 = st.columns(3)
+
+                    col1.metric(
+                        "Upload HTTP Status",
+                        erp_result.get("upload_http_status") or "N/A"
+                    )
+
+                    col2.metric(
+                        "Processing HTTP Status",
+                        erp_result.get("http_status") or "N/A"
+                    )
+
+                    col3.metric(
+                        "Completion Verified",
+                        (
+                            "Yes"
+                            if erp_result.get("completion_verified")
+                            else "No"
+                        )
+                    )
+
+                    st.write(
+                        f"**Message:** "
+                        f"{erp_result.get('message', 'N/A')}"
+                    )
+
+                    st.markdown("**Workflow Stages**")
+
+                    for stage, details in erp_result.get(
+                        "stages", {}
+                    ).items():
+
+                        if details.get("success"):
+
+                            st.write(
+                                f"✅ {stage.replace('_', ' ').title()}"
+                            )
+
+                        else:
+
+                            st.write(
+                                f"❌ {stage.replace('_', ' ').title()}"
+                            )
+
+                # ----------------------------------
+                # ERROR INFORMATION
+                # ----------------------------------
+
+                if job.get("error"):
+
+                    st.error(
+                        f"Job error: {job['error']}"
+                    )
+
+                    st.warning(
+                        "Check ERP records before submitting this file again."
+                    )
+
+                # ----------------------------------
+                # JOB HISTORY
+                # ----------------------------------
+
+                history = job.get("history", [])
+
+                if history:
+
+                    with st.expander("Job Activity History"):
+
+                        for entry in history:
+
+                            st.write(
+                                f"**{entry['timestamp']}** — "
+                                f"{entry['stage']} — "
+                                f"{entry['message']}"
+                            )
+
     # ----------------------------------------------
-    # PROCESSING SUMMARY
+    # ERP BROWSER MANAGEMENT
     # ----------------------------------------------
-
-    with st.expander("View Processing Summary"):
-
-        st.text(result["summary_text"])
-
-
-# --------------------------------------------------
-# ERP RESULT DISPLAY
-# --------------------------------------------------
-
-erp_result = st.session_state.get("erp_result")
-
-if isinstance(erp_result, dict) and erp_result:
 
     st.divider()
 
-    st.subheader("6. ERP Automation Result")
+    st.markdown("### ERP Browser")
 
-    col1, col2, col3, col4 = st.columns(4)
+    browser_open = is_erp_browser_open()
+    active_jobs_exist = has_active_jobs()
 
-    col1.metric(
-        "Upload HTTP Status",
-        erp_result.get("upload_http_status") or "N/A"
-    )
+    if browser_open:
 
-    col2.metric(
-        "Processing HTTP Status",
-        erp_result.get("http_status") or "N/A"
-    )
+        st.success("ERP browser is currently open.")
 
-    processing_time = erp_result.get(
-        "processing_time_seconds"
-    )
+        if active_jobs_exist:
 
-    col3.metric(
-        "Processing Time",
-        (
-            f"{processing_time} sec"
-            if processing_time is not None
-            else "N/A"
-        )
-    )
-
-    col4.metric(
-        "Completion Verified",
-        "Yes" if erp_result.get("completion_verified") else "No"
-    )
-
-    st.write(
-        f"**Department:** {erp_result.get('department', 'N/A')}"
-    )
-
-    st.write(
-        f"**Message:** {erp_result.get('message', 'N/A')}"
-    )
-
-    st.write("**Workflow stages:**")
-
-    for stage, details in erp_result.get("stages", {}).items():
-
-        if details.get("success"):
-
-            st.write(
-                f"✅ **{stage.replace('_', ' ').title()}:** Completed"
+            st.warning(
+                "Browser closing is disabled while jobs are active."
             )
 
         else:
 
-            st.write(
-                f"❌ **{stage.replace('_', ' ').title()}:** Not completed"
-            )
+            if st.button(
+                "Close ERP Browser",
+                key="close_erp_browser"
+            ):
 
-    if is_erp_browser_open():
+                try:
+
+                    close_erp_browser()
+
+                    st.success("ERP browser closed successfully.")
+
+                except Exception as error:
+
+                    st.error(
+                        f"Could not close ERP browser: {error}"
+                    )
+
+    else:
 
         st.info(
-            "Chromium is still open. You can inspect the ERP page "
-            "or start another upload from Section 2."
+            "ERP browser is currently closed. "
+            "It will open automatically when the next ERP job starts."
         )
 
-elif erp_result is None:
 
-    st.info(
-        "No ERP automation result is available yet. "
-        "Prepare a CSV and start ERP upload when ready."
-    )
-
-else:
-
-    st.warning(
-        "ERP result has an unexpected format."
-    )
+render_job_dashboard()
