@@ -7,6 +7,7 @@ from datetime import datetime, date
 from pathlib import Path
 
 from automation.browser_manager import submit_department_task
+from automation.barcode_validator import validate_barcodes
 from config.departments import get_department
 
 from core.parser import parse_scanner_txt
@@ -34,16 +35,10 @@ from jobs.job_registry import (
 # EXECUTION CONFIGURATION
 # --------------------------------------------------
 
-# Multiple TXT files can be prepared simultaneously.
 _PREPARATION_EXECUTOR = ThreadPoolExecutor(
     max_workers=2,
     thread_name_prefix="Barcode-Preparation"
 )
-
-# ERP workers are managed by browser_manager.py.
-# Each department has its own single-threaded worker.
-# Different departments can run simultaneously.
-# Jobs within the same department remain sequential.
 
 
 # --------------------------------------------------
@@ -55,12 +50,6 @@ _INITIALIZED = False
 
 
 def initialize_job_manager():
-    """
-    Initialize the job manager once per application process.
-
-    Jobs left active after an application restart are marked
-    interrupted instead of being automatically retried.
-    """
 
     global _INITIALIZED
 
@@ -88,9 +77,6 @@ def _make_job_id():
 
 
 def _json_safe(value):
-    """
-    Convert common Python values into JSON-compatible values.
-    """
 
     if isinstance(value, Path):
         return str(value)
@@ -126,10 +112,6 @@ def _json_safe(value):
 
 
 def _fail_job(job_id, stage, error, erp_result=None):
-    """
-    Store a failed job without allowing an exception in the
-    background worker to disappear silently.
-    """
 
     update_job(
         job_id=job_id,
@@ -154,11 +136,6 @@ def submit_job(
     original_file_bytes,
     storage_date
 ):
-    """
-    Create a job and immediately schedule its preparation.
-
-    This function does not wait for TXT processing or ERP processing.
-    """
 
     initialize_job_manager()
 
@@ -177,8 +154,6 @@ def submit_job(
         storage_date=storage_date
     )
 
-    # Copy the bytes so the background task does not depend
-    # on Streamlit's uploaded-file object.
     file_bytes = bytes(original_file_bytes)
 
     try:
@@ -216,19 +191,10 @@ def _prepare_job(
     original_file_bytes,
     storage_date
 ):
-    """
-    Parse TXT, process duplicates, save output files,
-    and submit the ERP task to its department worker.
-    """
 
     try:
 
         department = get_department(department_id)
-
-        processing_date = datetime.combine(
-            storage_date,
-            datetime.now().time()
-        )
 
         # ------------------------------------------
         # STEP 1: PARSE TXT
@@ -270,103 +236,39 @@ def _prepare_job(
         ) = build_outputs(valid_df)
 
         # ------------------------------------------
-        # STEP 3: SUMMARY GENERATION
+        # STEP 3: QUEUE VALIDATION AND ERP
         # ------------------------------------------
-
-        update_job(
-            job_id,
-            stage="Generating summary",
-            progress=40,
-            message="Generating processing summary."
-        )
-
-        summary_text = generate_processing_summary(
-            department_name=department["name"],
-            original_filename=original_filename,
-            total_rows=total_rows,
-            unique_count=unique_count,
-            duplicate_count=duplicate_count,
-            invalid_count=invalid_count,
-            processing_date=processing_date
-        )
-
-        # ------------------------------------------
-        # STEP 4: SAVE OUTPUT FILES
-        # ------------------------------------------
-
-        update_job(
-            job_id,
-            stage="Saving output files",
-            progress=50,
-            message="Saving TXT, CSV and reports."
-        )
-
-        saved_files = save_outputs(
-            department_id=department_id,
-            original_file_bytes=original_file_bytes,
-            original_filename=original_filename,
-            unique_df=unique_df,
-            duplicate_rows_df=duplicate_rows_df,
-            duplicate_summary_df=duplicate_summary_df,
-            invalid_df=invalid_df,
-            total_rows=total_rows,
-            unique_count=unique_count,
-            duplicate_count=duplicate_count,
-            summary_text=summary_text,
-            processing_date=processing_date
-        )
-
-        saved_files = _json_safe(saved_files)
-
-        metrics = {
-            "total_rows": total_rows,
-            "unique_count": unique_count,
-            "duplicate_count": duplicate_count,
-            "invalid_count": invalid_count,
-        }
-
-        update_job(
-            job_id,
-            stage="Output files saved",
-            progress=60,
-            message="TXT, ERP CSV and reports saved successfully.",
-            saved_files=saved_files,
-            metrics=metrics
-        )
-
-        # ------------------------------------------
-        # STEP 5: ADD TO ERP QUEUE
-        # ------------------------------------------
-
-        erp_csv_path = Path(
-            saved_files["erp_csv_path"]
-        )
-
-        if not erp_csv_path.is_file():
-            raise FileNotFoundError(
-                f"ERP CSV not found: {erp_csv_path}"
-            )
 
         update_job(
             job_id,
             status="queued",
-            stage="Waiting for ERP",
-            progress=60,
+            stage="Waiting for barcode validation",
+            progress=40,
             message=(
-                "Preparation completed. "
-                "Waiting for department ERP worker."
+                "Duplicate processing completed. "
+                "Waiting for department validation worker."
             )
         )
 
-        # Submit to the dedicated department worker.
-        # Different departments can execute concurrently.
-        # The same department's jobs execute sequentially.
+        # The department worker performs validation,
+        # saves the corrected files and then runs ERP.
         submit_department_task(
             department_id,
-            _run_erp_job,
+            _validate_save_and_run_job,
             job_id,
             department_id,
-            erp_csv_path,
+            original_filename,
+            original_file_bytes,
+            storage_date,
+            valid_df,
+            unique_df,
+            duplicate_rows_df,
+            duplicate_summary_df,
+            invalid_df,
+            total_rows,
+            unique_count,
+            duplicate_count,
+            invalid_count,
         )
 
     except Exception as error:
@@ -376,6 +278,217 @@ def _prepare_job(
             "Preparation failed",
             error
         )
+
+
+# --------------------------------------------------
+# VALIDATION, SAVING AND ERP HANDOFF
+# --------------------------------------------------
+
+def _validate_save_and_run_job(
+    job_id,
+    department_id,
+    original_filename,
+    original_file_bytes,
+    storage_date,
+    valid_df,
+    unique_df,
+    duplicate_rows_df,
+    duplicate_summary_df,
+    invalid_df,
+    total_rows,
+    unique_count,
+    duplicate_count,
+    invalid_count,
+):
+    """
+    Runs entirely on the department's dedicated worker.
+
+    1. Validate unique barcodes.
+    2. Remove wrong barcodes.
+    3. Generate summary.
+    4. Save corrected files.
+    5. Run the existing ERP workflow.
+    """
+
+    department = get_department(department_id)
+
+    # ----------------------------------------------
+    # STEP 4: BARCODE VALIDATION
+    # ----------------------------------------------
+
+    try:
+
+        update_job(
+            job_id,
+            status="validating",
+            stage="Barcode validation",
+            progress=45,
+            message="Uploading unique barcodes for validation."
+        )
+
+        wrong_barcodes = validate_barcodes(
+            department_id=department_id,
+            department=department,
+            unique_df=unique_df,
+        )
+
+    except Exception as error:
+
+        _fail_job(
+            job_id,
+            "Barcode validation failed",
+            error
+        )
+
+        return
+
+    # ----------------------------------------------
+    # STEP 5: REMOVE WRONG BARCODES
+    # ----------------------------------------------
+
+    wrong_set = set(wrong_barcodes)
+
+    barcode_values = (
+        unique_df["BarcodeNumber"]
+        .astype(str)
+        .str.strip()
+    )
+
+    wrong_mask = barcode_values.isin(wrong_set)
+
+    wrong_barcodes_df = (
+        unique_df.loc[wrong_mask, ["BarcodeNumber"]]
+        .drop_duplicates()
+        .copy()
+    )
+
+    corrected_unique_df = unique_df.loc[
+        ~wrong_mask
+    ].copy()
+
+    final_unique_count = len(corrected_unique_df)
+
+    update_job(
+        job_id,
+        stage="Removing wrong barcodes",
+        progress=52,
+        message=(
+            f"Validation completed. "
+            f"{len(wrong_set)} wrong barcode(s) found and removed."
+        )
+    )
+
+    # ----------------------------------------------
+    # STEP 6: GENERATE SUMMARY
+    # ----------------------------------------------
+
+    processing_date = datetime.combine(
+        storage_date,
+        datetime.now().time()
+    )
+
+    summary_text = generate_processing_summary(
+        department_name=department["name"],
+        original_filename=original_filename,
+        total_rows=total_rows,
+        unique_count=final_unique_count,
+        duplicate_count=duplicate_count,
+        invalid_count=invalid_count,
+        processing_date=processing_date
+    )
+
+    # ----------------------------------------------
+    # STEP 7: SAVE CORRECTED OUTPUT FILES
+    # ----------------------------------------------
+
+    try:
+
+        update_job(
+            job_id,
+            stage="Saving output files",
+            progress=57,
+            message="Saving original TXT and corrected CSV."
+        )
+
+        saved_files = save_outputs(
+            department_id=department_id,
+            original_file_bytes=original_file_bytes,
+            original_filename=original_filename,
+            unique_df=corrected_unique_df,
+            duplicate_rows_df=duplicate_rows_df,
+            duplicate_summary_df=duplicate_summary_df,
+            invalid_df=invalid_df,
+            total_rows=total_rows,
+            unique_count=final_unique_count,
+            duplicate_count=duplicate_count,
+            summary_text=summary_text,
+            processing_date=processing_date,
+            wrong_barcodes_df=wrong_barcodes_df,
+        )
+
+        saved_files = _json_safe(saved_files)
+
+    except Exception as error:
+
+        _fail_job(
+            job_id,
+            "Saving output failed",
+            error
+        )
+
+        return
+
+    # ----------------------------------------------
+    # STEP 8: UPDATE JOB METRICS
+    # ----------------------------------------------
+
+    metrics = {
+        "total_rows": total_rows,
+        "invalid_count": invalid_count,
+        "duplicate_count": duplicate_count,
+        "unique_count_before_validation": unique_count,
+        "wrong_barcode_count": len(wrong_set),
+        "final_unique_count": final_unique_count,
+    }
+
+    update_job(
+        job_id,
+        status="running",
+        stage="Output files saved",
+        progress=65,
+        message=(
+            "Barcode validation completed. "
+            "Corrected files saved. Starting ERP."
+        ),
+        saved_files=saved_files,
+        metrics=metrics
+    )
+
+    # ----------------------------------------------
+    # STEP 9: START ERP ON THE SAME WORKER
+    # ----------------------------------------------
+
+    erp_csv_path = Path(
+        saved_files["erp_csv_path"]
+    )
+
+    if not erp_csv_path.is_file():
+
+        _fail_job(
+            job_id,
+            "ERP file missing",
+            FileNotFoundError(
+                f"ERP CSV not found: {erp_csv_path}"
+            )
+        )
+
+        return
+
+    _run_erp_job(
+        job_id,
+        department_id,
+        erp_csv_path
+    )
 
 
 # --------------------------------------------------
@@ -389,18 +502,14 @@ def _update_erp_progress(
     state="running",
     details=None
 ):
-    """
-    Update the individual job's ERP progress.
-    """
 
     current_job = get_job(job_id)
 
     if current_job is None:
         return
 
-    current_progress = current_job.get("progress", 60) or 60
+    current_progress = current_job.get("progress", 65) or 65
 
-    # Move progress forward without reaching 100 before completion.
     new_progress = min(
         95,
         max(65, current_progress + 3)
@@ -427,12 +536,6 @@ def _run_erp_job(
     department_id,
     erp_csv_path
 ):
-    """
-    Runs inside the dedicated department worker thread.
-
-    Playwright browser creation, usage and cleanup must remain
-    on this same thread.
-    """
 
     erp_result = None
 
@@ -448,8 +551,6 @@ def _run_erp_job(
             message="ERP automation has started."
         )
 
-        # Run the existing ERP workflow directly.
-        # Do not submit another nested worker here.
         erp_result = upload_and_process(
             department=department,
             csv_path=erp_csv_path,
@@ -490,13 +591,11 @@ def _run_erp_job(
 
     except ERPStageError as error:
 
-        partial_result = error.result or erp_result
-
         _fail_job(
             job_id,
             "ERP processing failed",
             error,
-            erp_result=partial_result
+            erp_result=error.result or erp_result
         )
 
     except Exception as error:

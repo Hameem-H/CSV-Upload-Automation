@@ -1085,5 +1085,1601 @@
                 "message": "ERP processing completed and verified."
             }
         ]
+    },
+    {
+        "job_id": "JOB_20261125_113740_9A275B",
+        "department_id": "store_fgs",
+        "department": "Store FGS",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "failed",
+        "stage": "ERP processing failed",
+        "progress": 95,
+        "message": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying.",
+        "created_at": "2026-11-25T11:37:40",
+        "started_at": "2026-11-25T11:37:44",
+        "completed_at": "2026-11-25T11:38:17",
+        "saved_files": {
+            "department": "Store FGS",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.txt",
+            "erp_csv_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details.csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary.csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines.csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes.csv",
+            "processing_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary.txt",
+            "file_suffix": "",
+            "total_rows": 26,
+            "unique_count": 0,
+            "duplicate_count": 0,
+            "wrong_barcode_count": 26
+        },
+        "metrics": {
+            "total_rows": 26,
+            "invalid_count": 0,
+            "duplicate_count": 0,
+            "unique_count_before_validation": 26,
+            "wrong_barcode_count": 26,
+            "final_unique_count": 0
+        },
+        "erp_result": {
+            "department": "Store FGS",
+            "csv_file": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "csv_size": 0,
+            "success": false,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": false,
+                    "timeout": true,
+                    "current_url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcode.php"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": null,
+            "http_status": null,
+            "completion_verified": false,
+            "message": null
+        },
+        "error": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying.",
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:37:40",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:40",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:40",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:40",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:40",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 26 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:44",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:45",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:46",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:46",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:37:47",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode.csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:38:17",
+                "stage": "ERP processing failed",
+                "status": "failed",
+                "message": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_113926_C63803",
+        "department_id": "store_fgs",
+        "department": "Store FGS",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "failed",
+        "stage": "ERP processing failed",
+        "progress": 95,
+        "message": "ERP automation failed: Page.wait_for_url: Target page, context or browser has been closed\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+        "created_at": "2026-11-25T11:39:26",
+        "started_at": "2026-11-25T11:39:28",
+        "completed_at": "2026-11-25T11:39:41",
+        "saved_files": {
+            "department": "Store FGS",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.txt",
+            "erp_csv_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details.csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary.csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines.csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes.csv",
+            "processing_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary.txt",
+            "file_suffix": "",
+            "total_rows": 26,
+            "unique_count": 0,
+            "duplicate_count": 0,
+            "wrong_barcode_count": 26
+        },
+        "metrics": {
+            "total_rows": 26,
+            "invalid_count": 0,
+            "duplicate_count": 0,
+            "unique_count_before_validation": 26,
+            "wrong_barcode_count": 26,
+            "final_unique_count": 0
+        },
+        "erp_result": {
+            "department": "Store FGS",
+            "csv_file": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "csv_size": 0,
+            "success": false,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": null,
+            "http_status": null,
+            "completion_verified": false,
+            "message": "Page.wait_for_url: Target page, context or browser has been closed\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+        },
+        "error": "ERP automation failed: Page.wait_for_url: Target page, context or browser has been closed\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:39:26",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:26",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:26",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:26",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:26",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 26 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:28",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:29",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:30",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:30",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:30",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode.csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:39:41",
+                "stage": "ERP processing failed",
+                "status": "failed",
+                "message": "ERP automation failed: Page.wait_for_url: Target page, context or browser has been closed\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_114012_711546",
+        "department_id": "stickering",
+        "department": "Stickering",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "completed",
+        "stage": "ERP completed",
+        "progress": 100,
+        "message": "ERP processing completed and verified.",
+        "created_at": "2026-11-25T11:40:12",
+        "started_at": "2026-11-25T11:40:15",
+        "completed_at": "2026-11-25T11:41:26",
+        "saved_files": {
+            "department": "Stickering",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(3).txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(3).csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details(3).csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary(3).csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines(3).csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes(3).csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary(3).txt",
+            "file_suffix": "(3)",
+            "total_rows": 26,
+            "unique_count": 26,
+            "duplicate_count": 0,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 26,
+            "invalid_count": 0,
+            "duplicate_count": 0,
+            "unique_count_before_validation": 26,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 26
+        },
+        "erp_result": {
+            "department": "Stickering",
+            "csv_file": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(3).csv",
+            "csv_size": 936,
+            "success": true,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode(3).csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "intermediate_page": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "processing": {
+                    "success": true,
+                    "http_status": 200,
+                    "response_url": "http://localhost/ERP/BarcodeRead/custom/ProcessSticker.php",
+                    "processing_time_seconds": 67.18,
+                    "response_received": true,
+                    "request_submitted": true,
+                    "wait_mode": "indefinite"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": 67.18,
+            "http_status": 200,
+            "completion_verified": true,
+            "message": "ERP processing completed successfully. ProcessSticker.php returned HTTP 200."
+        },
+        "error": null,
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:40:12",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:12",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:12",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:12",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:12",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:15",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:16",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:17",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:17",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:18",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode(3).csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:18",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:19",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Checking ERP processing page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:19",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "ERP processing page is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:19",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Preparing final ERP processing button..."
+            },
+            {
+                "timestamp": "2026-11-25T11:40:19",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Submitting final Stickering processing request. Waiting indefinitely for ProcessSticker.php HTTP response..."
+            },
+            {
+                "timestamp": "2026-11-25T11:41:26",
+                "stage": "Processing",
+                "status": "running",
+                "message": "ERP processing completed successfully. ProcessSticker.php returned HTTP 200."
+            },
+            {
+                "timestamp": "2026-11-25T11:41:26",
+                "stage": "ERP completed",
+                "status": "completed",
+                "message": "ERP processing completed and verified."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_114239_9F4BAD",
+        "department_id": "final_packing",
+        "department": "Final Packing",
+        "original_filename": "Barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "completed",
+        "stage": "ERP completed",
+        "progress": 100,
+        "message": "ERP processing completed and verified.",
+        "created_at": "2026-11-25T11:42:39",
+        "started_at": "2026-11-25T11:42:45",
+        "completed_at": "2026-11-25T11:43:14",
+        "saved_files": {
+            "department": "Final Packing",
+            "original_filename": "Barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode.txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details.csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary.csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines.csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes.csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary.txt",
+            "file_suffix": "",
+            "total_rows": 2352,
+            "unique_count": 301,
+            "duplicate_count": 2051,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 2352,
+            "invalid_count": 14,
+            "duplicate_count": 2051,
+            "unique_count_before_validation": 301,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 301
+        },
+        "erp_result": {
+            "department": "Final Packing",
+            "csv_file": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode.csv",
+            "csv_size": 10812,
+            "success": true,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode.csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/FPbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/FPbarcodeprocess.php"
+                },
+                "page2_submit": {
+                    "success": true,
+                    "http_status": 200,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/ProcessFP.php"
+                },
+                "intermediate_page": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/ProcessFP.php"
+                },
+                "final_processing": {
+                    "success": true,
+                    "http_status": 200,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/FPL1finalpro.php",
+                    "processing_time_seconds": 0.69
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": 0.69,
+            "http_status": 200,
+            "completion_verified": true,
+            "message": null
+        },
+        "error": null,
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:42:39",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:39",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:39",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:40",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:40",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:45",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:46",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:47",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:47",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:47",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode.csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:49",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:49",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Checking the second ERP page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:42:49",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Page 2 is ready. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:13",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Page 2 submitted. Page 3 response received."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:13",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Waiting for the Page 3 processing button..."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:13",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Page 3 is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:13",
+                "stage": "Final Processing",
+                "status": "running",
+                "message": "Starting final ERP processing..."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:14",
+                "stage": "Final Processing",
+                "status": "running",
+                "message": "Final ERP processing completed successfully."
+            },
+            {
+                "timestamp": "2026-11-25T11:43:14",
+                "stage": "ERP completed",
+                "status": "completed",
+                "message": "ERP processing completed and verified."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_114900_A547BD",
+        "department_id": "stickering",
+        "department": "Stickering",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "completed",
+        "stage": "ERP completed",
+        "progress": 100,
+        "message": "ERP processing completed and verified.",
+        "created_at": "2026-11-25T11:49:00",
+        "started_at": "2026-11-25T11:49:02",
+        "completed_at": "2026-11-25T11:50:16",
+        "saved_files": {
+            "department": "Stickering",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(4).txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(4).csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details(4).csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary(4).csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines(4).csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes(4).csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary(4).txt",
+            "file_suffix": "(4)",
+            "total_rows": 26,
+            "unique_count": 26,
+            "duplicate_count": 0,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 26,
+            "invalid_count": 0,
+            "duplicate_count": 0,
+            "unique_count_before_validation": 26,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 26
+        },
+        "erp_result": {
+            "department": "Stickering",
+            "csv_file": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-25\\barcode(4).csv",
+            "csv_size": 936,
+            "success": true,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode(4).csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "intermediate_page": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "processing": {
+                    "success": true,
+                    "http_status": 200,
+                    "response_url": "http://localhost/ERP/BarcodeRead/custom/ProcessSticker.php",
+                    "processing_time_seconds": 69.81,
+                    "response_received": true,
+                    "request_submitted": true,
+                    "wait_mode": "indefinite"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": 69.81,
+            "http_status": 200,
+            "completion_verified": true,
+            "message": "ERP processing completed successfully. ProcessSticker.php returned HTTP 200."
+        },
+        "error": null,
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:49:00",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:00",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:00",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:00",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:00",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:02",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:03",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:04",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:04",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:04",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:05",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode(4).csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:06",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:06",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Checking ERP processing page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:06",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "ERP processing page is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:06",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Preparing final ERP processing button..."
+            },
+            {
+                "timestamp": "2026-11-25T11:49:06",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Submitting final Stickering processing request. Waiting indefinitely for ProcessSticker.php HTTP response..."
+            },
+            {
+                "timestamp": "2026-11-25T11:50:15",
+                "stage": "Processing",
+                "status": "running",
+                "message": "ERP processing completed successfully. ProcessSticker.php returned HTTP 200."
+            },
+            {
+                "timestamp": "2026-11-25T11:50:16",
+                "stage": "ERP completed",
+                "status": "completed",
+                "message": "ERP processing completed and verified."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_115120_9CC5D3",
+        "department_id": "final_packing",
+        "department": "Final Packing",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "failed",
+        "stage": "ERP processing failed",
+        "progress": 95,
+        "message": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying.",
+        "created_at": "2026-11-25T11:51:20",
+        "started_at": "2026-11-25T11:51:23",
+        "completed_at": "2026-11-25T11:51:56",
+        "saved_files": {
+            "department": "Final Packing",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(1).txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(1).csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details(1).csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary(1).csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines(1).csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes(1).csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary(1).txt",
+            "file_suffix": "(1)",
+            "total_rows": 26,
+            "unique_count": 0,
+            "duplicate_count": 0,
+            "wrong_barcode_count": 26
+        },
+        "metrics": {
+            "total_rows": 26,
+            "invalid_count": 0,
+            "duplicate_count": 0,
+            "unique_count_before_validation": 26,
+            "wrong_barcode_count": 26,
+            "final_unique_count": 0
+        },
+        "erp_result": {
+            "department": "Final Packing",
+            "csv_file": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(1).csv",
+            "csv_size": 0,
+            "success": false,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": false,
+                    "timeout": true,
+                    "current_url": "http://localhost/ERP/BarcodeRead/custom/FPbarcode.php"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": null,
+            "http_status": null,
+            "completion_verified": false,
+            "message": null
+        },
+        "error": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying.",
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:51:20",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:20",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:20",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:20",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:20",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 26 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:23",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:24",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:24",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:24",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:25",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode(1).csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:51:56",
+                "stage": "ERP processing failed",
+                "status": "failed",
+                "message": "CSV upload timed out before its response or Page 2 could be verified. Check ERP records before retrying."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_115248_6D871A",
+        "department_id": "final_packing",
+        "department": "Final Packing",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "completed",
+        "stage": "ERP completed",
+        "progress": 100,
+        "message": "ERP processing completed and verified.",
+        "created_at": "2026-11-25T11:52:48",
+        "started_at": "2026-11-25T11:52:53",
+        "completed_at": "2026-11-25T11:53:22",
+        "saved_files": {
+            "department": "Final Packing",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(2).txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(2).csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details(2).csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary(2).csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines(2).csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes(2).csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary(2).txt",
+            "file_suffix": "(2)",
+            "total_rows": 2352,
+            "unique_count": 301,
+            "duplicate_count": 2051,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 2352,
+            "invalid_count": 14,
+            "duplicate_count": 2051,
+            "unique_count_before_validation": 301,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 301
+        },
+        "erp_result": {
+            "department": "Final Packing",
+            "csv_file": "D:\\Barcode_testing\\Fp\\2026\\2026-11\\2026-11-25\\barcode(2).csv",
+            "csv_size": 10812,
+            "success": true,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode(2).csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/FPbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/FPbarcodeprocess.php"
+                },
+                "page2_submit": {
+                    "success": true,
+                    "http_status": 200,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/ProcessFP.php"
+                },
+                "intermediate_page": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/ProcessFP.php"
+                },
+                "final_processing": {
+                    "success": true,
+                    "http_status": 200,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/FPL1finalpro.php",
+                    "processing_time_seconds": 0.67
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": 0.67,
+            "http_status": 200,
+            "completion_verified": true,
+            "message": null
+        },
+        "error": null,
+        "history": [
+            {
+                "timestamp": "2026-11-25T11:52:48",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:48",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:48",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:49",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:49",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:53",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:55",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:55",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:55",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:56",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode(2).csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:58",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:58",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Checking the second ERP page..."
+            },
+            {
+                "timestamp": "2026-11-25T11:52:58",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Page 2 is ready. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:21",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Page 2 submitted. Page 3 response received."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:21",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Waiting for the Page 3 processing button..."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:21",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Page 3 is ready."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:21",
+                "stage": "Final Processing",
+                "status": "running",
+                "message": "Starting final ERP processing..."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:22",
+                "stage": "Final Processing",
+                "status": "running",
+                "message": "Final ERP processing completed successfully."
+            },
+            {
+                "timestamp": "2026-11-25T11:53:22",
+                "stage": "ERP completed",
+                "status": "completed",
+                "message": "ERP processing completed and verified."
+            }
+        ]
+    },
+    {
+        "job_id": "JOB_20261125_121651_59E6DA",
+        "department_id": "store_fgs",
+        "department": "Store FGS",
+        "original_filename": "barcode.txt",
+        "storage_date": "2026-11-25",
+        "status": "failed",
+        "stage": "ERP processing failed",
+        "progress": 95,
+        "message": "Page 2 submission failed: Page.expect_response: Target page, context or browser has been closed. Check ERP records before retrying.",
+        "created_at": "2026-11-25T12:16:51",
+        "started_at": "2026-11-25T12:16:57",
+        "completed_at": "2026-11-25T12:26:52",
+        "saved_files": {
+            "department": "Store FGS",
+            "original_filename": "barcode.txt",
+            "daily_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25",
+            "reports_folder": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode(1).txt",
+            "erp_csv_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode(1).csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_details(1).csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\duplicate_summary(1).csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\invalid_lines(1).csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\wrong_barcodes(1).csv",
+            "processing_summary_path": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\Reports\\processing_summary(1).txt",
+            "file_suffix": "(1)",
+            "total_rows": 2352,
+            "unique_count": 301,
+            "duplicate_count": 2051,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 2352,
+            "invalid_count": 14,
+            "duplicate_count": 2051,
+            "unique_count_before_validation": 301,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 301
+        },
+        "erp_result": {
+            "department": "Store FGS",
+            "csv_file": "D:\\Barcode_testing\\FGS\\2026\\2026-11\\2026-11-25\\barcode(1).csv",
+            "csv_size": 10812,
+            "success": false,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode(1).csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "page2_submit": {
+                    "success": false,
+                    "current_url": "http://localhost/ERP/BarcodeRead/custom/ProcessSticker.php",
+                    "error": "Page.expect_response: Target page, context or browser has been closed"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": null,
+            "http_status": null,
+            "completion_verified": false,
+            "message": null
+        },
+        "error": "Page 2 submission failed: Page.expect_response: Target page, context or browser has been closed. Check ERP records before retrying.",
+        "history": [
+            {
+                "timestamp": "2026-11-25T12:16:51",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:51",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:52",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:53",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:53",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:57",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:58",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:58",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:58",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-25T12:16:59",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode(1).csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T12:17:01",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-25T12:17:01",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Checking the second ERP page..."
+            },
+            {
+                "timestamp": "2026-11-25T12:17:01",
+                "stage": "Page2 Submit",
+                "status": "running",
+                "message": "Page 2 is ready. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-25T12:26:52",
+                "stage": "ERP processing failed",
+                "status": "failed",
+                "message": "Page 2 submission failed: Page.expect_response: Target page, context or browser has been closed. Check ERP records before retrying."
+            }
+        ]
     }
 ]

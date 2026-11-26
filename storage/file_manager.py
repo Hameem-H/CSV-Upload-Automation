@@ -36,6 +36,10 @@ def _build_file_paths(daily_folder, number=""):
             reports_folder / f"invalid_lines{number}.csv"
         ),
 
+        "wrong_barcodes_path": (
+            reports_folder / f"wrong_barcodes{number}.csv"
+        ),
+
         "processing_summary_path": (
             reports_folder / f"processing_summary{number}.txt"
         ),
@@ -54,15 +58,9 @@ def _find_available_file_paths(daily_folder):
 
     while True:
 
-        if number_index == 0:
-            suffix = ""
-        else:
-            suffix = f"({number_index})"
+        suffix = "" if number_index == 0 else f"({number_index})"
 
-        paths = _build_file_paths(
-            daily_folder,
-            suffix
-        )
+        paths = _build_file_paths(daily_folder, suffix)
 
         all_paths = [
             paths["original_txt_path"],
@@ -70,6 +68,7 @@ def _find_available_file_paths(daily_folder):
             paths["duplicate_details_path"],
             paths["duplicate_summary_path"],
             paths["invalid_lines_path"],
+            paths["wrong_barcodes_path"],
             paths["processing_summary_path"],
         ]
 
@@ -93,8 +92,16 @@ def save_outputs(
     unique_count,
     duplicate_count,
     summary_text,
-    processing_date=None
+    processing_date=None,
+    wrong_barcodes_df=None,
 ):
+    """
+    Save the original TXT, corrected ERP CSV and processing reports.
+
+    unique_df must contain only barcodes that passed ERP validation.
+
+    wrong_barcodes_df contains the barcodes rejected by ERP validation.
+    """
 
     department = get_department(department_id)
 
@@ -107,7 +114,6 @@ def save_outputs(
 
     output_root = Path(output_root)
 
-    # The department's permanent base folder must already exist.
     if not output_root.exists():
         raise FileNotFoundError(
             f"Department base folder does not exist: {output_root}"
@@ -128,8 +134,13 @@ def save_outputs(
 
     daily_folder.mkdir(parents=True, exist_ok=True)
 
+    if wrong_barcodes_df is None:
+        wrong_barcodes_df = __import__("pandas").DataFrame(
+            columns=["BarcodeNumber"]
+        )
+
     # ----------------------------------------------
-    # SELECT AVAILABLE FILENAMES
+    # SELECT AVAILABLE FILENAMES AND SAVE
     # ----------------------------------------------
 
     with _FILE_SAVE_LOCK:
@@ -137,20 +148,7 @@ def save_outputs(
         paths = _find_available_file_paths(daily_folder)
 
         reports_folder = paths["reports_folder"]
-
-        reports_folder.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        all_file_paths = [
-            paths["original_txt_path"],
-            paths["erp_csv_path"],
-            paths["duplicate_details_path"],
-            paths["duplicate_summary_path"],
-            paths["invalid_lines_path"],
-            paths["processing_summary_path"],
-        ]
+        reports_folder.mkdir(parents=True, exist_ok=True)
 
         created_files = []
 
@@ -160,25 +158,20 @@ def save_outputs(
             # ORIGINAL TXT
             # --------------------------------------
             # Save the uploaded scanner TXT bytes exactly as received.
-            # No parsing, modification or conversion is applied here.
 
-            paths["original_txt_path"].write_bytes(
-                original_file_bytes
-            )
-
-            created_files.append(
-                paths["original_txt_path"]
-            )
+            paths["original_txt_path"].write_bytes(original_file_bytes)
+            created_files.append(paths["original_txt_path"])
 
             # --------------------------------------
             # ERP CSV
             # --------------------------------------
+            # This contains only the corrected, validated barcodes.
 
             erp_columns = [
                 "Date",
                 "Time",
                 "ScannerID",
-                "BarcodeNumber"
+                "BarcodeNumber",
             ]
 
             erp_upload_df = unique_df[erp_columns].copy()
@@ -188,12 +181,10 @@ def save_outputs(
                 index=False,
                 header=False,
                 encoding="utf-8",
-                lineterminator="\n"
+                lineterminator="\n",
             )
 
-            created_files.append(
-                paths["erp_csv_path"]
-            )
+            created_files.append(paths["erp_csv_path"])
 
             # --------------------------------------
             # DUPLICATE DETAILS
@@ -202,12 +193,10 @@ def save_outputs(
             duplicate_rows_df.to_csv(
                 paths["duplicate_details_path"],
                 index=False,
-                encoding="utf-8-sig"
+                encoding="utf-8-sig",
             )
 
-            created_files.append(
-                paths["duplicate_details_path"]
-            )
+            created_files.append(paths["duplicate_details_path"])
 
             # --------------------------------------
             # DUPLICATE SUMMARY
@@ -216,12 +205,10 @@ def save_outputs(
             duplicate_summary_df.to_csv(
                 paths["duplicate_summary_path"],
                 index=False,
-                encoding="utf-8-sig"
+                encoding="utf-8-sig",
             )
 
-            created_files.append(
-                paths["duplicate_summary_path"]
-            )
+            created_files.append(paths["duplicate_summary_path"])
 
             # --------------------------------------
             # INVALID LINES
@@ -230,12 +217,22 @@ def save_outputs(
             invalid_df.to_csv(
                 paths["invalid_lines_path"],
                 index=False,
-                encoding="utf-8-sig"
+                encoding="utf-8-sig",
             )
 
-            created_files.append(
-                paths["invalid_lines_path"]
+            created_files.append(paths["invalid_lines_path"])
+
+            # --------------------------------------
+            # WRONG BARCODES
+            # --------------------------------------
+
+            wrong_barcodes_df.to_csv(
+                paths["wrong_barcodes_path"],
+                index=False,
+                encoding="utf-8-sig",
             )
+
+            created_files.append(paths["wrong_barcodes_path"])
 
             # --------------------------------------
             # PROCESSING SUMMARY
@@ -243,21 +240,24 @@ def save_outputs(
 
             paths["processing_summary_path"].write_text(
                 summary_text,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
-            created_files.append(
-                paths["processing_summary_path"]
-            )
+            created_files.append(paths["processing_summary_path"])
 
         except Exception:
 
             # Remove only files created by this save operation.
             # Existing files are never deleted.
             for path in created_files:
-
-                if path.exists():
-                    path.unlink()
+                try:
+                    if path.exists():
+                        path.unlink()
+                except Exception as cleanup_error:
+                    print(
+                        f"Could not remove incomplete output {path}: "
+                        f"{cleanup_error}"
+                    )
 
             raise
 
@@ -274,6 +274,7 @@ def save_outputs(
         "duplicate_details_path": paths["duplicate_details_path"],
         "duplicate_summary_path": paths["duplicate_summary_path"],
         "invalid_lines_path": paths["invalid_lines_path"],
+        "wrong_barcodes_path": paths["wrong_barcodes_path"],
         "processing_summary_path": paths["processing_summary_path"],
 
         "file_suffix": paths["file_suffix"],
@@ -281,4 +282,5 @@ def save_outputs(
         "total_rows": total_rows,
         "unique_count": unique_count,
         "duplicate_count": duplicate_count,
+        "wrong_barcode_count": len(wrong_barcodes_df),
     }

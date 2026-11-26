@@ -2,15 +2,23 @@
 from pathlib import Path
 
 
+# ERP base URL
 ERP_BASE_URL = "http://localhost/ERP/BarcodeRead/custom"
 
 
 DEPARTMENTS = {
 
+    # ==========================================
+    # STICKERING
+    # ==========================================
+
     "stickering": {
         "name": "Stickering",
 
         "output_root": Path(r"D:\Barcode_testing\Stickering"),
+
+        # Barcode validation section
+        "validation_section": "Sticker",
 
         "upload_url": (
             f"{ERP_BASE_URL}/stickeringbarcode.php"
@@ -35,20 +43,30 @@ DEPARTMENTS = {
     },
 
 
+    # ==========================================
+    # CONV START
+    # ==========================================
+
     "conv_start": {
         "name": "Conv Start",
 
         "output_root": Path(r"D:\Barcode_testing\Conv Start"),
 
-         "upload_url": (
+        # Barcode validation section
+        "validation_section": "Sticker",
+
+        "upload_url": (
             f"{ERP_BASE_URL}/constartL1.php"
         ),
+
         "submit_url": (
             f"{ERP_BASE_URL}/constartL1barcodeprocess.php"
         ),
+
         "intermediate_url": (
             f"{ERP_BASE_URL}/ProcessConstartL1.php"
         ),
+
         "process_url": (
             f"{ERP_BASE_URL}/ProcessConSL1finalpro.php"
         ),
@@ -58,20 +76,30 @@ DEPARTMENTS = {
     },
 
 
+    # ==========================================
+    # CONV END
+    # ==========================================
+
     "conv_end": {
         "name": "Conv End",
 
         "output_root": Path(r"D:\Barcode_testing\Conv End"),
 
-         "upload_url": (
+        # Barcode validation section
+        "validation_section": "Sticker",
+
+        "upload_url": (
             f"{ERP_BASE_URL}/conendL1.php"
         ),
+
         "submit_url": (
             f"{ERP_BASE_URL}/conendL1barcodeprocess.php"
         ),
+
         "intermediate_url": (
             f"{ERP_BASE_URL}/ProcessConendL1.php"
         ),
+
         "process_url": (
             f"{ERP_BASE_URL}/ProcessConEL1finalpro.php"
         ),
@@ -81,10 +109,17 @@ DEPARTMENTS = {
     },
 
 
+    # ==========================================
+    # FINAL PACKING
+    # ==========================================
+
     "final_packing": {
         "name": "Final Packing",
 
         "output_root": Path(r"D:\Barcode_testing\Fp"),
+
+        # Barcode validation section
+        "validation_section": "Final Packing",
 
         # Page 1: CSV upload
         "upload_url": (
@@ -111,20 +146,31 @@ DEPARTMENTS = {
     },
 
 
+    # ==========================================
+    # STORE FGS
+    # ==========================================
+
     "store_fgs": {
         "name": "Store FGS",
 
         "output_root": Path(r"D:\Barcode_testing\FGS"),
 
-         "upload_url": (
+        # Barcode validation section
+        "validation_section": "Final Packing",
+
+        # Existing ERP endpoints preserved exactly.
+        "upload_url": (
             f"{ERP_BASE_URL}/stickeringbarcode.php"
         ),
+
         "submit_url": (
             f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
         ),
+
         "intermediate_url": (
             f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
         ),
+
         "process_url": (
             f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
         ),
@@ -135,6 +181,10 @@ DEPARTMENTS = {
 
 }
 
+
+# ==========================================
+# DEPARTMENT HELPERS
+# ==========================================
 
 def get_department(department_id):
 
@@ -171,6 +221,7 @@ def validate_department_config(department_id):
         "upload_url",
         "submit_url",
         "process_url",
+        "validation_section",
     ]
 
     if department["workflow"] == "four_page":
@@ -186,6 +237,14 @@ def validate_department_config(department_id):
         raise ValueError(
             f"{department['name']} configuration is incomplete: "
             + ", ".join(missing_settings)
+        )
+
+    if department["validation_section"] not in (
+        "Sticker",
+        "Final Packing",
+    ):
+        raise ValueError(
+            f"Invalid validation section for {department['name']}."
         )
 
     return True
