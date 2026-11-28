@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 # ERP base URL
-ERP_BASE_URL = "http://localhost/ERP/BarcodeRead/custom"
+ERP_BASE_URL = "https://erp.corvoltd.com/BarcodeRead/custom"
 
 
 DEPARTMENTS = {
@@ -15,7 +15,7 @@ DEPARTMENTS = {
     "stickering": {
         "name": "Stickering",
 
-        "output_root": Path(r"D:\Barcode_testing\Stickering"),
+        "output_root": Path(r"F:\Barcode\Stickering"),
 
         # Barcode validation section
         "validation_section": "Sticker",
@@ -50,7 +50,7 @@ DEPARTMENTS = {
     "conv_start": {
         "name": "Conv Start",
 
-        "output_root": Path(r"D:\Barcode_testing\Conv Start"),
+        "output_root": Path(r"F:\Barcode\CONE LINE 1(Conveyer Start)"),
 
         # Barcode validation section
         "validation_section": "Sticker",
@@ -83,7 +83,7 @@ DEPARTMENTS = {
     "conv_end": {
         "name": "Conv End",
 
-        "output_root": Path(r"D:\Barcode_testing\Conv End"),
+        "output_root": Path(r"F:\Barcode\FP-Out(Conveyor End)"),
 
         # Barcode validation section
         "validation_section": "Sticker",
@@ -116,7 +116,7 @@ DEPARTMENTS = {
     "final_packing": {
         "name": "Final Packing",
 
-        "output_root": Path(r"D:\Barcode_testing\Fp"),
+        "output_root": Path(r"F:\Barcode\FP-CTN(Final Packing)"),
 
         # Barcode validation section
         "validation_section": "Final Packing",
@@ -153,26 +153,26 @@ DEPARTMENTS = {
     "store_fgs": {
         "name": "Store FGS",
 
-        "output_root": Path(r"D:\Barcode_testing\FGS"),
+        "output_root": Path(r"F:\Barcode\Stores-FGS"),
 
         # Barcode validation section
         "validation_section": "Final Packing",
 
         # Existing ERP endpoints preserved exactly.
         "upload_url": (
-            f"{ERP_BASE_URL}/stickeringbarcode.php"
+            f"{ERP_BASE_URL}/storesin.php"
         ),
 
         "submit_url": (
-            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+            f"{ERP_BASE_URL}/SINbarcodeprocess.php"
         ),
 
         "intermediate_url": (
-            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+            f"{ERP_BASE_URL}/ProcessSIN.php"
         ),
 
         "process_url": (
-            f"{ERP_BASE_URL}/stickeringbarcodeprocess.php"
+            f"{ERP_BASE_URL}/SINfinalpro.php"
         ),
 
         "workflow": "four_page",
