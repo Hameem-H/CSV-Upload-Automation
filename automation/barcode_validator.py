@@ -10,7 +10,7 @@ from .browser_manager import (
 )
 
 
-VALIDATION_URL = "http://localhost/ERP/Barcode/sc_barcode_check.php"
+VALIDATION_URL = "https://erp.corvoltd.com/Barcode/sc_barcode_check.php"
 
 BARCODE_COLUMNS = [
     "Date",

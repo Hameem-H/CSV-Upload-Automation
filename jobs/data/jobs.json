@@ -2681,5 +2681,216 @@
                 "message": "Page 2 submission failed: Page.expect_response: Target page, context or browser has been closed. Check ERP records before retrying."
             }
         ]
+    },
+    {
+        "job_id": "JOB_20261128_113331_C14203",
+        "department_id": "stickering",
+        "department": "Stickering",
+        "original_filename": "BARCODES.txt",
+        "storage_date": "2026-11-28",
+        "status": "failed",
+        "stage": "ERP processing failed",
+        "progress": 95,
+        "message": "An error occurred during final ERP processing. Details: Page.expect_response: Target page, context or browser has been closed",
+        "created_at": "2026-11-28T11:33:31",
+        "started_at": "2026-11-28T11:33:42",
+        "completed_at": "2026-11-28T11:40:19",
+        "saved_files": {
+            "department": "Stickering",
+            "original_filename": "BARCODES.txt",
+            "daily_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28",
+            "reports_folder": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports",
+            "original_txt_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\barcode.txt",
+            "erp_csv_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\barcode.csv",
+            "duplicate_details_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports\\duplicate_details.csv",
+            "duplicate_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports\\duplicate_summary.csv",
+            "invalid_lines_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports\\invalid_lines.csv",
+            "wrong_barcodes_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports\\wrong_barcodes.csv",
+            "processing_summary_path": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\Reports\\processing_summary.txt",
+            "file_suffix": "",
+            "total_rows": 690,
+            "unique_count": 630,
+            "duplicate_count": 60,
+            "wrong_barcode_count": 0
+        },
+        "metrics": {
+            "total_rows": 690,
+            "invalid_count": 0,
+            "duplicate_count": 60,
+            "unique_count_before_validation": 630,
+            "wrong_barcode_count": 0,
+            "final_unique_count": 630
+        },
+        "erp_result": {
+            "department": "Stickering",
+            "csv_file": "D:\\Barcode_testing\\Stickering\\2026\\2026-11\\2026-11-28\\barcode.csv",
+            "csv_size": 22680,
+            "success": false,
+            "stages": {
+                "login": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/menu.php",
+                    "reused_session": false
+                },
+                "upload": {
+                    "success": true,
+                    "csv_file": "barcode.csv",
+                    "http_status": 200,
+                    "post_url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcode.php",
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "intermediate_page": {
+                    "success": true,
+                    "url": "http://localhost/ERP/BarcodeRead/custom/stickeringbarcodeprocess.php"
+                },
+                "processing": {
+                    "success": false,
+                    "error_type": "TargetClosedError",
+                    "processing_time_seconds": 367.93,
+                    "request_submitted": true,
+                    "error": "Page.expect_response: Target page, context or browser has been closed"
+                }
+            },
+            "upload_http_status": 200,
+            "processing_time_seconds": 367.93,
+            "http_status": null,
+            "completion_verified": false,
+            "message": "An error occurred during final ERP processing. Details: Page.expect_response: Target page, context or browser has been closed"
+        },
+        "error": "An error occurred during final ERP processing. Details: Page.expect_response: Target page, context or browser has been closed",
+        "history": [
+            {
+                "timestamp": "2026-11-28T11:33:31",
+                "stage": "submitted",
+                "status": "preparing",
+                "message": "Job submitted."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:31",
+                "stage": "Parsing TXT",
+                "status": "preparing",
+                "message": "Reading and validating scanner records."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:31",
+                "stage": "Duplicate processing",
+                "status": "preparing",
+                "message": "Checking duplicate barcode records."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:32",
+                "stage": "Waiting for barcode validation",
+                "status": "queued",
+                "message": "Duplicate processing completed. Waiting for department validation worker."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:32",
+                "stage": "Barcode validation",
+                "status": "validating",
+                "message": "Uploading unique barcodes for validation."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Removing wrong barcodes",
+                "status": "validating",
+                "message": "Validation completed. 0 wrong barcode(s) found and removed."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Saving output files",
+                "status": "validating",
+                "message": "Saving original TXT and corrected CSV."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Output files saved",
+                "status": "running",
+                "message": "Barcode validation completed. Corrected files saved. Starting ERP."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Starting ERP",
+                "status": "running",
+                "message": "ERP automation has started."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Browser",
+                "status": "running",
+                "message": "Connecting to ERP browser..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Browser",
+                "status": "running",
+                "message": "ERP browser is ready."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:42",
+                "stage": "Login",
+                "status": "running",
+                "message": "Opening ERP login page..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:43",
+                "stage": "Login",
+                "status": "running",
+                "message": "Submitting ERP login..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:43",
+                "stage": "Login",
+                "status": "running",
+                "message": "ERP login successful."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:43",
+                "stage": "Upload",
+                "status": "running",
+                "message": "Opening ERP CSV upload page..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:44",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV barcode.csv attached. Clicking Submit..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:47",
+                "stage": "Upload",
+                "status": "running",
+                "message": "CSV upload POST received. Intermediate page opened."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:47",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "Checking ERP processing page..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:47",
+                "stage": "Intermediate Page",
+                "status": "running",
+                "message": "ERP processing page is ready."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:47",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Preparing final ERP processing button..."
+            },
+            {
+                "timestamp": "2026-11-28T11:33:48",
+                "stage": "Processing",
+                "status": "running",
+                "message": "Submitting final Stickering processing request. Waiting indefinitely for ProcessSticker.php HTTP response..."
+            },
+            {
+                "timestamp": "2026-11-28T11:40:19",
+                "stage": "ERP processing failed",
+                "status": "failed",
+                "message": "An error occurred during final ERP processing. Details: Page.expect_response: Target page, context or browser has been closed"
+            }
+        ]
     }
 ]
